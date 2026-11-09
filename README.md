@@ -16,3 +16,7 @@ Las versiones exactas (AGP, Kotlin, Compose BOM, SDK mínimo/objetivo) se valida
 
 - `velora-api` — backend (Java + Spring Boot).
 - `velora-web` — aplicación web (Next.js + TypeScript).
+
+## Licencia
+
+[Apache-2.0](LICENSE).
