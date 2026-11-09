@@ -1,0 +1,26 @@
+# Gradle / Android
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json
+
+# Firma y secretos
+*.jks
+*.keystore
+keystore.properties
+google-services.json
+.env
+
+# IDE
+.idea/
+*.iml
+.DS_Store
