@@ -14,5 +14,5 @@ Las versiones exactas (AGP, Kotlin, Compose BOM, SDK mínimo/objetivo) se valida
 
 ## Repositorios relacionados
 
-- `velora-api` — backend (Kotlin + Spring Boot).
+- `velora-api` — backend (Java + Spring Boot).
 - `velora-web` — aplicación web (Next.js + TypeScript).
