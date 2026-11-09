@@ -1,6 +1,6 @@
 # Instrucciones para agentes de desarrollo — Velora
 
-> Copia del archivo homónimo de `velora-project-kit` (carpeta padre). La especificación vive en `../docs/` y el contrato en `../contracts/openapi-v1.yaml`.
+> Copia del archivo homónimo de `velora-project-kit` (carpeta padre). La especificación vive en `../docs/` y el contrato en `../velora-api/openapi/openapi-v1.yaml` (ADR-011).
 
 ## Antes de cambiar código
 
@@ -65,7 +65,7 @@
 
 ## Reglas específicas de `velora-android`
 
-- Consume la API únicamente según `../contracts/openapi-v1.yaml`; no inventes endpoints ni campos.
+- Consume la API únicamente según `../velora-api/openapi/openapi-v1.yaml` (ADR-011); no inventes endpoints ni campos.
 - Todos los textos de interfaz en `strings.xml` (`es-MX`); nada hardcodeado en composables.
 - Separa UI, dominio y datos; caché y sincronización tolerantes a desconexión.
 - No guardes tokens fuera de almacenamiento seguro ni los registres en logs.
