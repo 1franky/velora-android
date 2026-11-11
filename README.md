@@ -2,7 +2,7 @@
 
 Aplicación Android nativa de **Velora**, plataforma personal de analítica de ciclismo (ruta y MTB).
 
-> Estado: Fase 6, entrega 1 (base del proyecto). La especificación está en `../docs/07-android-application.md` del kit.
+> Estado: Fase 6, entrega 2 (inicio de sesión). La especificación está en `../docs/07-android-application.md` del kit.
 
 ## Stack
 
@@ -19,6 +19,7 @@ Aplicación Android nativa de **Velora**, plataforma personal de analítica de c
 | `app` | Actividad, navegación y pantallas |
 | `core:designsystem` | `VeloraTheme` y colores (los mismos tokens que la web) |
 | `core:network` | Cliente generado (`mx.velora.android.api`) y `VeloraApi`, que lo configura para un servidor |
+| `core:session` | Login, renovación de tokens y cierre de sesión; el refresh token, cifrado con el Keystore (ADR-022) |
 
 Las siguientes entregas agregan `core:database` (Room), `core:model` y los módulos `feature:*`.
 
@@ -40,9 +41,11 @@ Requiere JDK 21 o posterior y el SDK de Android (`local.properties` con `sdk.dir
 ./gradlew assembleDebug        # APK de depuración
 ./gradlew testDebugUnitTest    # pruebas (JVM y Robolectric)
 ./gradlew lintDebug            # lint: las advertencias fallan el build
+./gradlew :core:session:connectedDebugAndroidTest   # cifrado con el Keystore real (emulador encendido)
 ```
 
 Para probar en el emulador contra la API local, el servidor del emulador hacia la computadora es `http://10.0.2.2:8090`.
+Solo la versión de desarrollo acepta `http://`; la publicable exige HTTPS (ADR-022).
 
 ## Licencia
 

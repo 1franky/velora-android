@@ -10,6 +10,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { VeloraTheme { VeloraApp() } }
+        val app = application as VeloraApplication
+        setContent { VeloraTheme { VeloraRoot(app.session, app.allowCleartext) } }
     }
 }
