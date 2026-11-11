@@ -1,0 +1,1516 @@
+openapi: 3.1.0
+info:
+  title: Velora API
+  version: 1.18.0
+  description: >
+    API personal de analítica de ciclismo. Contrato inicial; ampliar mediante PRs.
+    La salud del servicio es operativa y se expone fuera de /api/v1 en /actuator/health (liveness y readiness).
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      summary: Iniciar sesión con correo y contraseña
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /auth/refresh:
+    post:
+      summary: Renovar tokens con un refresh token (rotación de un solo uso)
+      description: >
+        Cada refresh token solo puede usarse una vez. Reutilizar uno ya rotado revoca toda la sesión
+        (detección de robo) y responde 401.
+      operationId: refreshTokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '200':
+          description: Tokens renovados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/logout:
+    post:
+      summary: Cerrar la sesión asociada a un refresh token
+      description: Idempotente. Revoca la sesión completa; un token desconocido o ya revocado también responde 204.
+      operationId: logout
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '204': { description: Sesión cerrada }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /me:
+    get:
+      summary: Perfil y preferencias del usuario autenticado
+      operationId: getMe
+      responses:
+        '200':
+          description: Perfil
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /me/preferences:
+    patch:
+      summary: Actualizar preferencias
+      operationId: updatePreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PreferencesUpdate' }
+      responses:
+        '200':
+          description: Preferencias actualizadas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Preferences' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /bikes:
+    get:
+      summary: Listar bicicletas
+      operationId: listBikes
+      responses:
+        '200':
+          description: Bicicletas del usuario, activas e inactivas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Bike' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      summary: Registrar una bicicleta
+      operationId: createBike
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BikeCreate' }
+      responses:
+        '201':
+          description: Bicicleta creada
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Bike' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /bikes/{bikeId}:
+    parameters:
+      - in: path
+        name: bikeId
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      summary: Actualizar una bicicleta
+      description: Para retirar una bicicleta sin perder su historial, usar `active=false`.
+      operationId: updateBike
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BikeUpdate' }
+      responses:
+        '200':
+          description: Bicicleta actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Bike' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      summary: Borrar una bicicleta
+      operationId: deleteBike
+      responses:
+        '204': { description: Bicicleta borrada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /devices:
+    get:
+      summary: Listar dispositivos de captura
+      operationId: listDevices
+      responses:
+        '200':
+          description: Dispositivos del usuario
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Device' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      summary: Registrar un dispositivo de captura
+      operationId: createDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeviceCreate' }
+      responses:
+        '201':
+          description: Dispositivo creado
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Device' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /activities:
+    get:
+      summary: Listar actividades, de la más reciente a la más antigua
+      operationId: listActivities
+      parameters:
+        - in: query
+          name: from
+          description: Fecha deportiva local inicial (incluida).
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          description: Fecha deportiva local final (incluida).
+          schema: { type: string, format: date }
+        - in: query
+          name: bikeId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: subType
+          schema: { $ref: '#/components/schemas/ActivitySubType' }
+        - in: query
+          name: minDistanceM
+          schema: { type: number, minimum: 0 }
+        - in: query
+          name: maxDistanceM
+          schema: { type: number, minimum: 0 }
+        - in: query
+          name: cursor
+          description: Valor opaco de nextCursor de la página anterior.
+          schema: { type: string, maxLength: 200 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        '200':
+          description: Página de actividades
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ActivitySummary' }
+                  nextCursor:
+                    type: [string, 'null']
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /activities/{activityId}:
+    parameters:
+      - in: path
+        name: activityId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Detalle de una actividad
+      operationId: getActivity
+      responses:
+        '200':
+          description: Actividad
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      summary: Corregir título, tipo o bicicleta de una actividad
+      description: >
+        Solo se modifican los campos enviados; `bikeId: null` quita la bicicleta. Las métricas, el recorrido y el
+        archivo original no se editan (para recalcularlos, usar el reproceso). La bicicleta debe ser del usuario.
+      operationId: updateActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivityUpdate' }
+      responses:
+        '200':
+          description: Actividad actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityDetail' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      summary: Borrar una actividad, sus datos derivados y su archivo original
+      operationId: deleteActivity
+      responses:
+        '204': { description: Actividad borrada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /activities/{activityId}/reprocess:
+    parameters:
+      - in: path
+        name: activityId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      summary: Recalcular una actividad desde su archivo original
+      description: >
+        Asíncrono e idempotente: no crea actividades ni modifica el original; conserva título, bicicleta,
+        dispositivo y zona horaria de importación, y guarda las métricas anteriores para compararlas. Si ya hay un
+        reproceso pendiente, devuelve ese trabajo.
+      operationId: reprocessActivity
+      responses:
+        '202':
+          description: Reproceso en cola
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportAccepted' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /activities/{activityId}/streams:
+    parameters:
+      - in: path
+        name: activityId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Series por muestra de una actividad
+      operationId: getActivityStreams
+      parameters:
+        - in: query
+          name: types
+          description: Tipos separados por coma; por defecto, todos los disponibles.
+          schema: { type: string, maxLength: 200 }
+      responses:
+        '200':
+          description: Streams
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityStreams' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /activities/{activityId}/track:
+    parameters:
+      - in: path
+        name: activityId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Recorrido de la actividad como GeoJSON simplificado para un nivel de zoom
+      description: >
+        Un tramo por segmento (las pausas no se dibujan). La simplificación usa una tolerancia de aproximadamente
+        un píxel en el zoom pedido; el track original no se modifica. Solo para el propietario. Con privacidad de
+        inicio y fin activa se recorta antes de simplificar (ADR-016); si la rodada es más corta que lo que se
+        oculta, responde 404 con un detalle que lo explica.
+      operationId: getActivityTrack
+      parameters:
+        - in: query
+          name: zoom
+          schema: { type: integer, minimum: 0, maximum: 22, default: 14 }
+      responses:
+        '200':
+          description: Recorrido
+          content:
+            application/geo+json:
+              schema: { $ref: '#/components/schemas/ActivityTrack' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /activities/{activityId}/laps:
+    parameters:
+      - in: path
+        name: activityId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Vueltas de una actividad
+      operationId: getActivityLaps
+      responses:
+        '200':
+          description: Vueltas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ActivityLap' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /activities/{activityId}/climbs:
+    get:
+      summary: Subidas y distribución de pendientes de una actividad
+      operationId: getActivityClimbs
+      description: >
+        Detectadas con la altitud remuestreada cada 20 m y suavizada en 100 m (`climbs/1`): una subida cuenta si sube
+        al menos 25 m en al menos 300 m con pendiente media de 3 % o más; un descenso de menos del 10 % de lo subido
+        (entre 10 y 30 m) no la corta. `available` es false sin altitud o sin distancia. Solo distancias y altitudes:
+        no incluye posiciones.
+      parameters:
+        - in: path
+          name: activityId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Subidas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityClimbs' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /activities/{activityId}/possible-duplicates:
+    parameters:
+      - in: path
+        name: activityId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Actividades que parecen la misma rodada
+      description: >
+        Mismo criterio que la advertencia POSSIBLE_DUPLICATE al importar (ADR-009, nivel 3): inicio a menos de 2
+        minutos, duración y distancia parecidas y recorridos que se cruzan. Sirve para resolver duplicados después de
+        importar (p. ej. la misma rodada en FIT, GPX y TCX). Solo informa; nunca descarta nada. Lista vacía si no hay.
+      operationId: getPossibleDuplicates
+      responses:
+        '200':
+          description: Posibles duplicados, del más antiguo al más reciente
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ActivitySummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /activities/imports:
+    post:
+      summary: Importar actividad desde FIT, GPX o TCX
+      description: >
+        Guarda el archivo y crea un trabajo asíncrono. El formato se detecta por contenido, no por extensión.
+        Los duplicados no se rechazan aquí: el trabajo termina en estado DUPLICATE con la actividad existente.
+      operationId: importActivity
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                bikeId:
+                  type: string
+                  format: uuid
+                deviceId:
+                  type: string
+                  format: uuid
+                activityTitle:
+                  type: string
+                  maxLength: 200
+      responses:
+        '202':
+          description: Importación aceptada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportAccepted'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413':
+          description: Archivo demasiado grande
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+  /imports/{jobId}:
+    get:
+      summary: Consultar estado de importación
+      operationId: getImportJob
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Estado del job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /dashboard/summary:
+    get:
+      summary: Resumen del dashboard para un periodo
+      description: >
+        Calculado al vuelo sobre la fecha deportiva local de cada actividad. Semanas de lunes a domingo
+        (ISO-8601); meses y años de calendario. El periodo anterior tiene la misma duración y termina justo antes.
+      operationId: getDashboardSummary
+      parameters:
+        - in: query
+          name: period
+          schema: { type: string, enum: [week, month, year, all], default: month }
+        - in: query
+          name: date
+          description: Fecha local de referencia dentro del periodo; por defecto, hoy en la zona horaria del usuario.
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Resumen
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardSummary' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /geo/heatmap/{z}/{x}/{y}:
+    get:
+      summary: Tesela vectorial del mapa de calor personal
+      operationId: getHeatmapTile
+      description: >
+        Tesela Mapbox Vector Tile (XYZ, Web Mercator, extent 4096) con una capa `recorridos`: una línea por actividad
+        con recorrido, sin propiedades. El cliente las dibuja translúcidas y la intensidad sale de cuántas se enciman.
+        Los recorridos llegan recortados según la privacidad de inicio y fin del usuario (igual que en
+        `/activities/{activityId}/track`) y simplificados a medio píxel de la tesela. Una tesela sin recorridos
+        responde 204. Respuesta privada con ETag: con `If-None-Match` y sin cambios, 304.
+      parameters:
+        - in: path
+          name: z
+          required: true
+          description: Zoom; más allá de 16 el cliente amplía la tesela del 16.
+          schema: { type: integer, minimum: 0, maximum: 16 }
+        - in: path
+          name: x
+          required: true
+          description: Columna, de 0 a 2^z - 1.
+          schema: { type: integer, minimum: 0 }
+        - in: path
+          name: y
+          required: true
+          description: Fila, de 0 a 2^z - 1 (origen arriba a la izquierda).
+          schema: { type: integer, minimum: 0 }
+        - in: query
+          name: from
+          description: Fecha deportiva local inicial (incluida).
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          description: Fecha deportiva local final (incluida).
+          schema: { type: string, format: date }
+        - in: query
+          name: bikeId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: subType
+          schema: { $ref: '#/components/schemas/ActivitySubType' }
+      responses:
+        '200':
+          description: Tesela con al menos un recorrido
+          headers:
+            ETag:
+              schema: { type: string }
+          content:
+            application/vnd.mapbox-vector-tile:
+              schema: { type: string, format: binary }
+        '204':
+          description: No hay recorridos en esta tesela
+        '304':
+          description: La tesela no cambió desde el ETag enviado en `If-None-Match`
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /geo/exploration/summary:
+    get:
+      summary: Resumen de exploración (celdas H3 y cuadrícula de 1 km)
+      operationId: getExplorationSummary
+      description: >
+        Celdas visitadas en dos sistemas que no se comparan entre sí (ADR-018): H3 resolución 9 (área aproximada) y
+        cuadrícula métrica de 1 km en EPSG:6372 (solo México; superficie constante). Se calculan en segundo plano
+        tras importar o reprocesar, al cambiar la privacidad y al arrancar; `pendingActivities` dice cuántas faltan.
+        Las celdas salen del recorrido ya recortado por la privacidad de inicio y fin.
+      responses:
+        '200':
+          description: Resumen
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExplorationSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /geo/exploration/cells:
+    get:
+      summary: Celdas visitadas dentro de un recuadro, para dibujarlas
+      operationId: listExplorationCells
+      parameters:
+        - in: query
+          name: grid
+          schema: { type: string, enum: [H3, MX1KM], default: MX1KM }
+        - in: query
+          name: bbox
+          required: true
+          description: 'oeste,sur,este,norte en grados (WGS 84).'
+          schema: { type: string, maxLength: 120 }
+      responses:
+        '200':
+          description: >
+            Hasta 5 000 celdas, primero las más recorridas; `truncated` indica que hay más y conviene acercarse.
+          content:
+            application/geo+json:
+              schema: { $ref: '#/components/schemas/ExplorationCells' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /geo/exploration/largest-square:
+    get:
+      summary: Mayor cuadrado de celdas de 1 km visitadas
+      operationId: getLargestSquare
+      description: >
+        Cuadrícula de 1 km alineada al origen de EPSG:6372, conectividad por lados, una celda faltante rompe el
+        cuadrado. `size` es el lado en celdas (0 si aún no hay celdas).
+      responses:
+        '200':
+          description: Mayor cuadrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LargestSquare' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /geo/new-territory:
+    get:
+      summary: Tramos de una actividad recorridos por primera vez
+      operationId: getNewTerritory
+      description: >
+        Compara el recorrido de la actividad (recortado por la privacidad de inicio y fin) con las rodadas del mismo
+        usuario que empezaron antes (ADR-019). Un punto es nuevo si ninguna pasa a menos de `toleranceMeters`; los
+        tramos nuevos de menos de `minStretchMeters` se cuentan como conocidos (desplazamiento del GPS). `confidence`
+        baja con GPS escaso o cuando lo nuevo corre pegado a caminos conocidos (paralelos o GPS desviado).
+      parameters:
+        - in: query
+          name: activityId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: toleranceMeters
+          schema: { type: number, minimum: 10, maximum: 100, default: 25 }
+      responses:
+        '200':
+          description: Caminos nuevos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NewTerritory' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /analytics/timeseries:
+    get:
+      summary: Tendencias por semana, mes o año
+      operationId: getTimeseries
+      description: >
+        Totales por periodo de fecha deportiva local (semanas de lunes a domingo), con ceros en los periodos sin
+        rodadas (ADR-020). Cuenta una sola rodada de cada grupo de posibles duplicados sin resolver
+        (`duplicatesExcluded` dice cuántas se omitieron) y, salvo `includeIndoor=true`, solo rodadas de exterior.
+        Sin `from`: 12 semanas, 12 meses o desde el año de la primera rodada; sin `to`: hoy.
+      parameters:
+        - in: query
+          name: granularity
+          schema: { type: string, enum: [week, month, year], default: week }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: includeIndoor
+          schema: { type: boolean, default: false }
+        - in: query
+          name: subType
+          schema: { $ref: '#/components/schemas/ActivitySubType' }
+        - in: query
+          name: bikeId
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Serie
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Timeseries' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /analytics/records:
+    get:
+      summary: Récords personales con reglas explícitas
+      operationId: getRecords
+      description: >
+        Mayor distancia, desnivel y tiempo en movimiento, y velocidad media más alta (solo rodadas de al menos
+        `minSpeedDistanceMeters` y `minSpeedMovingSeconds`), más el día local con más kilómetros (ADR-020). Una sola
+        rodada de cada grupo de posibles duplicados; solo exterior salvo `includeIndoor=true`. En empate gana la
+        primera en lograrlo. `source` dice si el valor vino del dispositivo o lo calculó Velora. La velocidad máxima
+        no es récord: un pico del GPS la falsea.
+      parameters:
+        - in: query
+          name: includeIndoor
+          schema: { type: boolean, default: false }
+        - in: query
+          name: subType
+          schema: { $ref: '#/components/schemas/ActivitySubType' }
+      responses:
+        '200':
+          description: Récords (vacío si no hay rodadas)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Records' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /analytics/eddington:
+    get:
+      summary: Número de Eddington, de toda la historia y del año en curso
+      operationId: getEddington
+      description: >
+        Mayor E tal que hay al menos E días locales con al menos E km (§6, ADR-020), sumando las rodadas de cada día.
+        Una sola rodada de cada grupo de posibles duplicados; solo exterior salvo `includeIndoor=true`.
+        `missingForNext` son los días de E + 1 km o más que faltan para subir a E + 1.
+      parameters:
+        - in: query
+          name: includeIndoor
+          schema: { type: boolean, default: false }
+        - in: query
+          name: subType
+          schema: { $ref: '#/components/schemas/ActivitySubType' }
+      responses:
+        '200':
+          description: Eddington
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Eddington' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /analytics/heart-rate:
+    get:
+      summary: Tiempo en zonas cardiacas
+      operationId: getHeartRateZones
+      description: >
+        Tiempo en cada zona por porcentaje de la FC máxima del usuario (`hr-zones/1`, ADR-020): Z1 50–60 %, Z2 60–70 %,
+        Z3 70–80 %, Z4 80–90 %, Z5 90 % o más; `belowZonesSeconds` es el tiempo por debajo del 50 %. Cada muestra vale
+        hasta la siguiente, como máximo 10 s (las pausas no cuentan). Sin FC máxima configurada, `zones` viene vacío.
+        Una sola rodada por grupo de duplicados; solo exterior salvo `includeIndoor=true`. Sin `from`: 12 semanas.
+        Indicador de entrenamiento, no diagnóstico médico.
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: includeIndoor
+          schema: { type: boolean, default: false }
+        - in: query
+          name: subType
+          schema: { $ref: '#/components/schemas/ActivitySubType' }
+      responses:
+        '200':
+          description: Zonas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HeartRateZones' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /analytics/training-load:
+    get:
+      summary: Carga de entrenamiento semanal estimada
+      operationId: getTrainingLoad
+      description: >
+        **Estimación** con el TRIMP de Edwards (`edwards-trimp/1`, ADR-020): minutos en cada zona cardiaca por el
+        número de la zona (Z1 × 1 … Z5 × 5), sumados por semana local (lunes a domingo), las últimas `weeks` semanas
+        hasta la actual. Solo cuenta rodadas con FC y requiere la FC máxima del usuario; sin ella `load` es 0 y
+        `maxHeartRateBpm` null. Mismas reglas de duplicados y rodillo que el resto. Indicador de entrenamiento: no evalúa
+        riesgo de lesión ni da recomendaciones médicas (§12).
+      parameters:
+        - in: query
+          name: weeks
+          schema: { type: integer, minimum: 1, maximum: 104, default: 12 }
+        - in: query
+          name: includeIndoor
+          schema: { type: boolean, default: false }
+        - in: query
+          name: subType
+          schema: { $ref: '#/components/schemas/ActivitySubType' }
+      responses:
+        '200':
+          description: Carga por semana
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TrainingLoad' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Access token opaco de corta duración obtenido en /auth/login o /auth/refresh.
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: No autenticado, credenciales inválidas o token expirado/revocado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Recurso inexistente o de otro usuario
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    TooManyRequests:
+      description: Demasiados intentos; reintentar después de `Retry-After` segundos
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      description: Problem Details (RFC 9457). Textos en es-MX.
+      required: [status, title]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        errorId:
+          type: string
+          description: Identificador para correlacionar errores 500 con los logs.
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 1024 }
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string, minLength: 1, maxLength: 512 }
+    TokenResponse:
+      type: object
+      required: [tokenType, accessToken, accessTokenExpiresIn, refreshToken, refreshTokenExpiresIn]
+      properties:
+        tokenType: { type: string, enum: [Bearer] }
+        accessToken: { type: string }
+        accessTokenExpiresIn: { type: integer, minimum: 1, description: Segundos }
+        refreshToken: { type: string }
+        refreshTokenExpiresIn: { type: integer, minimum: 1, description: Segundos }
+    Me:
+      type: object
+      required: [id, email, preferences]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        preferences: { $ref: '#/components/schemas/Preferences' }
+    Preferences:
+      type: object
+      required: [locale, timeZone, distanceUnit, elevationUnit, trackPrivacyMeters, maxHeartRateBpm]
+      properties:
+        locale:
+          type: string
+          enum: [es-MX]
+        timeZone:
+          type: string
+          description: Identificador IANA, p. ej. America/Mexico_City.
+        distanceUnit:
+          type: string
+          enum: [km]
+        elevationUnit:
+          type: string
+          enum: [m]
+        trackPrivacyMeters:
+          $ref: '#/components/schemas/TrackPrivacyMeters'
+        maxHeartRateBpm:
+          type: [integer, 'null']
+          minimum: 100
+          maximum: 230
+          description: FC máxima que indicó el usuario para las zonas cardiacas (ADR-020); null si no la indicó.
+    TrackPrivacyMeters:
+      type: integer
+      enum: [0, 200, 300, 500, 1000]
+      description: >
+        Metros que se ocultan al inicio y al final de cada recorrido (ADR-016), medidos sobre el camino con una
+        variación estable de ±30 % por actividad; 0 la desactiva (por defecto). Se aplica en el servidor a los
+        recorridos, a las posiciones de las series y a los derivados geoespaciales.
+    PreferencesUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Solo se modifican los campos enviados.
+      properties:
+        timeZone: { type: string, minLength: 1, maxLength: 64 }
+        distanceUnit: { type: string, enum: [km] }
+        elevationUnit: { type: string, enum: [m] }
+        trackPrivacyMeters: { $ref: '#/components/schemas/TrackPrivacyMeters' }
+        maxHeartRateBpm:
+          type: integer
+          description: Entre 100 y 230 ppm; 0 la borra.
+          oneOf:
+            - const: 0
+            - minimum: 100
+              maximum: 230
+    BikeType:
+      type: string
+      enum: [MTB, ROAD, GRAVEL, OTHER]
+    Bike:
+      type: object
+      required: [id, name, bikeType, brand, model, weightKg, active, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        bikeType: { $ref: '#/components/schemas/BikeType' }
+        brand: { type: [string, 'null'] }
+        model: { type: [string, 'null'] }
+        weightKg: { type: [number, 'null'] }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    BikeCreate:
+      type: object
+      additionalProperties: false
+      required: [name, bikeType]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        bikeType: { $ref: '#/components/schemas/BikeType' }
+        brand: { type: [string, 'null'], maxLength: 100 }
+        model: { type: [string, 'null'], maxLength: 100 }
+        weightKg: { type: [number, 'null'], exclusiveMinimum: 0, maximum: 50 }
+    BikeUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Solo se modifican los campos enviados; `null` borra un campo opcional.
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        bikeType: { $ref: '#/components/schemas/BikeType' }
+        brand: { type: [string, 'null'], maxLength: 100 }
+        model: { type: [string, 'null'], maxLength: 100 }
+        weightKg: { type: [number, 'null'], exclusiveMinimum: 0, maximum: 50 }
+        active: { type: boolean }
+    Device:
+      type: object
+      required: [id, displayName, manufacturer, model, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        displayName: { type: string }
+        manufacturer: { type: [string, 'null'] }
+        model: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+    DeviceCreate:
+      type: object
+      additionalProperties: false
+      required: [displayName]
+      properties:
+        displayName: { type: string, minLength: 1, maxLength: 100 }
+        manufacturer: { type: [string, 'null'], maxLength: 100 }
+        model: { type: [string, 'null'], maxLength: 100 }
+    PeriodTotals:
+      type: object
+      required: [from, to, activityCount, distanceMeters, movingTimeSeconds, elevationGainMeters]
+      properties:
+        from: { type: [string, 'null'], format: date, description: Primera fecha local incluida; null en "all". }
+        to: { type: [string, 'null'], format: date, description: Última fecha local incluida; null en "all". }
+        activityCount: { type: integer, minimum: 0 }
+        distanceMeters: { type: number, minimum: 0 }
+        movingTimeSeconds: { type: integer, minimum: 0 }
+        elevationGainMeters: { type: number, minimum: 0 }
+    MonthlyTotals:
+      type: object
+      required: [month, activityCount, distanceMeters, movingTimeSeconds, elevationGainMeters]
+      properties:
+        month: { type: string, pattern: '^[0-9]{4}-[0-9]{2}$' }
+        activityCount: { type: integer, minimum: 0 }
+        distanceMeters: { type: number, minimum: 0 }
+        movingTimeSeconds: { type: integer, minimum: 0 }
+        elevationGainMeters: { type: number, minimum: 0 }
+    DashboardSummary:
+      type: object
+      required: [period, timeZone, current, previous, monthlyTrend, latestActivity]
+      properties:
+        period: { type: string, enum: [week, month, year, all] }
+        timeZone: { type: string }
+        current: { $ref: '#/components/schemas/PeriodTotals' }
+        previous:
+          description: Periodo anterior de igual duración; null en "all".
+          oneOf:
+            - { $ref: '#/components/schemas/PeriodTotals' }
+            - { type: 'null' }
+        monthlyTrend:
+          type: array
+          description: Los 12 meses que terminan en el mes de referencia, del más antiguo al más reciente, con ceros.
+          items: { $ref: '#/components/schemas/MonthlyTotals' }
+        latestActivity:
+          description: Actividad más reciente del usuario, o null si no hay ninguna.
+          oneOf:
+            - { $ref: '#/components/schemas/ActivitySummary' }
+            - { type: 'null' }
+    ActivitySubType:
+      type: string
+      enum: [MOUNTAIN_BIKE, ROAD, GRAVEL, INDOOR, OTHER]
+    MetricSource:
+      type: string
+      enum: [DEVICE_REPORTED, DERIVED]
+    ActivitySummary:
+      type: object
+      required: [id, title, startedAt, localStartDate, subType, distanceMeters, movingTimeSeconds,
+                 elapsedTimeSeconds, elevationGainMeters, averageSpeedMps, bikeId]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        startedAt: { type: string, format: date-time }
+        localStartDate:
+          type: string
+          format: date
+          description: Fecha deportiva local según la zona horaria del usuario al importar.
+        subType: { $ref: '#/components/schemas/ActivitySubType' }
+        distanceMeters:
+          type: [number, 'null']
+          description: Null si no hay datos (p. ej. rodillo sin sensor de velocidad).
+        movingTimeSeconds: { type: integer, minimum: 0 }
+        elapsedTimeSeconds: { type: integer, minimum: 0 }
+        elevationGainMeters: { type: [number, 'null'] }
+        averageSpeedMps: { type: [number, 'null'] }
+        bikeId: { type: [string, 'null'], format: uuid }
+    ActivityDetail:
+      type: object
+      description: Todos los campos de ActivitySummary más los de detalle.
+      required: [id, title, startedAt, localStartDate, subType, distanceMeters, movingTimeSeconds,
+                 elapsedTimeSeconds, elevationGainMeters, averageSpeedMps, bikeId, timeZone, sourceType, deviceId,
+                 elevationLossMeters, maxSpeedMps, averageHeartRateBpm, maxHeartRateBpm, averagePowerWatts,
+                 maxPowerWatts, averageCadenceRpm, metricsProvenance, hasTrack, streamTypes, lapCount, originalFile]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        startedAt: { type: string, format: date-time }
+        localStartDate: { type: string, format: date }
+        subType: { $ref: '#/components/schemas/ActivitySubType' }
+        distanceMeters: { type: [number, 'null'] }
+        movingTimeSeconds: { type: integer, minimum: 0 }
+        elapsedTimeSeconds: { type: integer, minimum: 0 }
+        elevationGainMeters: { type: [number, 'null'] }
+        averageSpeedMps: { type: [number, 'null'] }
+        bikeId: { type: [string, 'null'], format: uuid }
+        timeZone: { type: string }
+        sourceType: { type: string, enum: [FIT, GPX, TCX] }
+        deviceId: { type: [string, 'null'], format: uuid }
+        elevationLossMeters: { type: [number, 'null'] }
+        maxSpeedMps: { type: [number, 'null'] }
+        averageHeartRateBpm: { type: [integer, 'null'] }
+        maxHeartRateBpm: { type: [integer, 'null'] }
+        averagePowerWatts: { type: [integer, 'null'] }
+        maxPowerWatts: { type: [integer, 'null'] }
+        averageCadenceRpm: { type: [integer, 'null'] }
+        metricsProvenance:
+          type: object
+          description: Origen de cada métrica presente, por nombre de campo.
+          additionalProperties: { $ref: '#/components/schemas/MetricSource' }
+        hasTrack: { type: boolean }
+        streamTypes:
+          type: array
+          items: { $ref: '#/components/schemas/StreamType' }
+        lapCount: { type: integer, minimum: 0 }
+        originalFile:
+          type: object
+          required: [format, sizeBytes, importedAt]
+          properties:
+            format: { type: string, enum: [FIT, GPX, TCX] }
+            sizeBytes: { type: integer, minimum: 1 }
+            importedAt: { type: string, format: date-time }
+    ActivityUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Solo se modifican los campos enviados.
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        subType: { $ref: '#/components/schemas/ActivitySubType' }
+        bikeId:
+          type: [string, 'null']
+          format: uuid
+          description: Bicicleta del usuario; null la quita.
+    StreamType:
+      type: string
+      enum: [TIME, LATITUDE, LONGITUDE, ALTITUDE, DISTANCE, SPEED, HEART_RATE, CADENCE, POWER, TEMPERATURE]
+    ActivityStreams:
+      type: object
+      required: [sampleCount, streams]
+      properties:
+        sampleCount: { type: integer, minimum: 0 }
+        streams:
+          type: object
+          description: >
+            Una serie por tipo, todas de longitud sampleCount; null donde no hay dato. TIME en milisegundos desde
+            startedAt; unidades SI (m, m/s, °C) y grados WGS84. Con privacidad de inicio y fin activa, LATITUDE y
+            LONGITUDE son null en los tramos ocultos (ADR-016).
+          additionalProperties:
+            type: array
+            items: { type: [number, 'null'] }
+    ActivityTrack:
+      type: object
+      description: GeoJSON Feature (RFC 7946) con coordenadas [longitud, latitud] en WGS84.
+      required: [type, bbox, geometry, properties]
+      properties:
+        type: { type: string, enum: [Feature] }
+        bbox:
+          type: array
+          description: '[oeste, sur, este, norte]'
+          minItems: 4
+          maxItems: 4
+          items: { type: number }
+        geometry:
+          type: object
+          required: [type, coordinates]
+          properties:
+            type: { type: string, enum: [MultiLineString] }
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: array
+                  minItems: 2
+                  maxItems: 2
+                  items: { type: number }
+        properties:
+          type: object
+          required: [activityId, pointCount, returnedPointCount, zoom, trimmed]
+          properties:
+            activityId: { type: string, format: uuid }
+            pointCount: { type: integer, minimum: 2, description: Puntos del track original. }
+            returnedPointCount: { type: integer, minimum: 2 }
+            zoom: { type: integer }
+            trimmed:
+              type: boolean
+              description: >
+                El inicio y el fin están ocultos por la privacidad (ADR-016); el recuadro corresponde a lo visible.
+                Las distancias ocultas no se informan.
+    ActivityLap:
+      type: object
+      required: [lapNumber, startedAt, elapsedTimeSeconds, timerTimeSeconds, distanceMeters, averageSpeedMps,
+                 maxSpeedMps, averageHeartRateBpm, maxHeartRateBpm, averageCadenceRpm, averagePowerWatts, maxPowerWatts]
+      properties:
+        lapNumber: { type: integer, minimum: 1 }
+        startedAt: { type: [string, 'null'], format: date-time }
+        elapsedTimeSeconds: { type: [number, 'null'] }
+        timerTimeSeconds: { type: [number, 'null'] }
+        distanceMeters: { type: [number, 'null'] }
+        averageSpeedMps: { type: [number, 'null'] }
+        maxSpeedMps: { type: [number, 'null'] }
+        averageHeartRateBpm: { type: [integer, 'null'] }
+        maxHeartRateBpm: { type: [integer, 'null'] }
+        averageCadenceRpm: { type: [integer, 'null'] }
+        averagePowerWatts: { type: [integer, 'null'] }
+        maxPowerWatts: { type: [integer, 'null'] }
+    ImportAccepted:
+      type: object
+      required: [jobId, status, statusUrl]
+      properties:
+        jobId: { type: string, format: uuid }
+        status: { type: string, enum: [QUEUED] }
+        statusUrl: { type: string }
+    ImportJob:
+      type: object
+      required: [jobId, kind, status, warnings, possibleDuplicateActivityIds]
+      properties:
+        jobId: { type: string, format: uuid }
+        kind:
+          type: string
+          enum: [IMPORT, REPROCESS]
+        status:
+          type: string
+          enum: [QUEUED, PROCESSING, COMPLETED, DUPLICATE, REJECTED, FAILED]
+        activityId:
+          type: [string, 'null']
+          format: uuid
+          description: Actividad creada (COMPLETED) o la ya existente (DUPLICATE).
+        errorCode:
+          type: [string, 'null']
+          description: >
+            Motivo de REJECTED (EMPTY_FILE, UNSUPPORTED_FORMAT, MALFORMED_FILE, FORBIDDEN_XML_CONSTRUCT,
+            TOO_MANY_POINTS, INVALID_DATA) o, en FAILED, INTERNAL_ERROR o ACTIVITY_NOT_FOUND (reproceso de una
+            actividad borrada).
+        errorDetail:
+          type: [string, 'null']
+          description: Explicación en es-MX; nunca incluye contenido del archivo.
+        warnings:
+          type: array
+          description: Correcciones aplicadas al importar.
+          items:
+            type: object
+            required: [code, affectedCount]
+            properties:
+              code:
+                type: string
+                enum: [INVALID_COORDINATES, GPS_JUMPS, ALTITUDE_JUMPS, LONG_PAUSES, NEGATIVE_VALUES,
+                       NON_MONOTONIC_TIME, POSSIBLE_DUPLICATE]
+              affectedCount: { type: integer, minimum: 1 }
+        possibleDuplicateActivityIds:
+          type: array
+          description: Actividades parecidas (heurística o clave de origen débil); no se descartó nada.
+          items: { type: string, format: uuid }
+    ExplorationSummary:
+      type: object
+      additionalProperties: false
+      required: [algorithmVersion, processedActivities, pendingActivities, h3, metricGrid]
+      properties:
+        algorithmVersion: { type: string, examples: ['exploration-cells/1'] }
+        processedActivities: { type: integer, minimum: 0 }
+        pendingActivities:
+          type: integer
+          minimum: 0
+          description: Actividades con recorrido cuyas celdas aún se están calculando.
+        h3:
+          type: object
+          additionalProperties: false
+          required: [resolution, cellCount, approxAreaKm2]
+          properties:
+            resolution: { type: integer }
+            cellCount: { type: integer, minimum: 0 }
+            approxAreaKm2:
+              type: number
+              minimum: 0
+              description: Celdas × área promedio de un hexágono de esta resolución.
+        metricGrid:
+          type: object
+          additionalProperties: false
+          required: [cellSizeMeters, cellCount, areaKm2]
+          properties:
+            cellSizeMeters: { type: integer }
+            cellCount: { type: integer, minimum: 0 }
+            areaKm2: { type: number, minimum: 0 }
+    ExplorationCells:
+      type: object
+      additionalProperties: false
+      required: [type, grid, truncated, features]
+      properties:
+        type: { type: string, const: FeatureCollection }
+        grid: { type: string, enum: [H3, MX1KM] }
+        truncated: { type: boolean }
+        features:
+          type: array
+          maxItems: 5000
+          items:
+            type: object
+            additionalProperties: false
+            required: [type, geometry, properties]
+            properties:
+              type: { type: string, const: Feature }
+              geometry:
+                type: object
+                required: [type, coordinates]
+                properties:
+                  type: { type: string, const: Polygon }
+                  coordinates:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: array
+                        minItems: 2
+                        maxItems: 2
+                        items: { type: number }
+              properties:
+                type: object
+                additionalProperties: false
+                required: [activityCount]
+                properties:
+                  activityCount: { type: integer, minimum: 1 }
+    LargestSquare:
+      type: object
+      additionalProperties: false
+      required: [algorithmVersion, cellSizeMeters, size, sideKm, bbox]
+      properties:
+        algorithmVersion: { type: string, examples: ['largest-square/1'] }
+        cellSizeMeters: { type: integer }
+        size: { type: integer, minimum: 0, description: Lado del cuadrado en celdas. }
+        sideKm: { type: number, minimum: 0 }
+        bbox:
+          type: [array, 'null']
+          description: 'oeste,sur,este,norte del cuadrado en grados; null si no hay celdas.'
+          minItems: 4
+          maxItems: 4
+          items: { type: number }
+    NewTerritory:
+      type: object
+      additionalProperties: false
+      required: [activityId, algorithmVersion, toleranceMeters, minStretchMeters, comparedActivities, firstActivity,
+                 trimmed, analyzedDistanceMeters, newDistanceMeters, newFraction, confidence, geometry]
+      properties:
+        activityId: { type: string, format: uuid }
+        algorithmVersion: { type: string, examples: ['new-territory/1'] }
+        toleranceMeters: { type: number }
+        minStretchMeters: { type: number }
+        comparedActivities:
+          type: integer
+          minimum: 0
+          description: Rodadas con recorrido que empezaron antes que esta.
+        firstActivity: { type: boolean, description: 'Sin rodadas anteriores: todo es nuevo.' }
+        trimmed: { type: boolean, description: Se analizó el recorrido recortado por la privacidad. }
+        analyzedDistanceMeters: { type: number, minimum: 0 }
+        newDistanceMeters: { type: number, minimum: 0 }
+        newFraction: { type: number, minimum: 0, maximum: 1 }
+        confidence: { type: string, enum: [HIGH, MEDIUM, LOW] }
+        geometry:
+          description: Tramos nuevos (MultiLineString GeoJSON, WGS 84) o null si no hay.
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [type, coordinates]
+              properties:
+                type: { type: string, const: MultiLineString }
+                coordinates:
+                  type: array
+                  items:
+                    type: array
+                    minItems: 2
+                    items:
+                      type: array
+                      minItems: 2
+                      maxItems: 2
+                      items: { type: number }
+    TimeseriesTotals:
+      type: object
+      additionalProperties: false
+      required: [activityCount, distanceMeters, movingTimeSeconds, elevationGainMeters]
+      properties:
+        activityCount: { type: integer, minimum: 0 }
+        distanceMeters: { type: number, minimum: 0 }
+        movingTimeSeconds: { type: number, minimum: 0 }
+        elevationGainMeters: { type: number, minimum: 0 }
+    Timeseries:
+      type: object
+      additionalProperties: false
+      required: [granularity, from, to, includeIndoor, duplicatesExcluded, distanceSources, totals, buckets]
+      properties:
+        granularity: { type: string, enum: [week, month, year] }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        includeIndoor: { type: boolean }
+        duplicatesExcluded:
+          type: integer
+          minimum: 0
+          description: Posibles duplicados sin resolver del rango que no se sumaron.
+        distanceSources:
+          type: object
+          additionalProperties: false
+          description: Origen de la distancia de las rodadas sumadas (del dispositivo o calculada por Velora).
+          required: [deviceReported, derived]
+          properties:
+            deviceReported: { type: integer, minimum: 0 }
+            derived: { type: integer, minimum: 0 }
+        totals: { $ref: '#/components/schemas/TimeseriesTotals' }
+        buckets:
+          type: array
+          maxItems: 520
+          items: { $ref: '#/components/schemas/TimeseriesBucket' }
+    TimeseriesBucket:
+      type: object
+      additionalProperties: false
+      required: [start, end, activityCount, distanceMeters, movingTimeSeconds, elevationGainMeters]
+      properties:
+        start: { type: string, format: date, description: Primer día del periodo (lunes en semanas). }
+        end: { type: string, format: date, description: Último día del periodo. }
+        activityCount: { type: integer, minimum: 0 }
+        distanceMeters: { type: number, minimum: 0 }
+        movingTimeSeconds: { type: number, minimum: 0 }
+        elevationGainMeters: { type: number, minimum: 0 }
+    Records:
+      type: object
+      additionalProperties: false
+      required: [algorithmVersion, includeIndoor, minSpeedDistanceMeters, minSpeedMovingSeconds, records, biggestDay]
+      properties:
+        algorithmVersion: { type: string, examples: ['records/1'] }
+        includeIndoor: { type: boolean }
+        minSpeedDistanceMeters: { type: number }
+        minSpeedMovingSeconds: { type: number }
+        records:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [kind, value, activityId, title, localStartDate, source]
+            properties:
+              kind:
+                type: string
+                enum: [longest_distance, most_elevation, longest_moving_time, fastest_average_speed]
+              value:
+                type: number
+                description: Metros, metros, segundos o m/s según `kind`.
+              activityId: { type: string, format: uuid }
+              title: { type: string }
+              localStartDate: { type: string, format: date }
+              source:
+                oneOf:
+                  - $ref: '#/components/schemas/MetricSource'
+                  - type: 'null'
+        biggestDay:
+          oneOf:
+            - type: 'null'
+            - type: object
+              additionalProperties: false
+              required: [date, distanceMeters, activityCount]
+              properties:
+                date: { type: string, format: date }
+                distanceMeters: { type: number }
+                activityCount: { type: integer, minimum: 1 }
+    EddingtonValue:
+      type: object
+      additionalProperties: false
+      required: [number, daysForNext, missingForNext]
+      properties:
+        number: { type: integer, minimum: 0 }
+        daysForNext: { type: integer, minimum: 0, description: Días que ya tienen E + 1 km o más. }
+        missingForNext: { type: integer, minimum: 1 }
+    Eddington:
+      type: object
+      additionalProperties: false
+      required: [algorithmVersion, includeIndoor, year, daysWithRides, overall, thisYear]
+      properties:
+        algorithmVersion: { type: string, examples: ['eddington/1'] }
+        includeIndoor: { type: boolean }
+        year: { type: integer, description: Año en curso en la zona horaria del usuario. }
+        daysWithRides: { type: integer, minimum: 0 }
+        overall: { $ref: '#/components/schemas/EddingtonValue' }
+        thisYear: { $ref: '#/components/schemas/EddingtonValue' }
+    ActivityClimbs:
+      type: object
+      additionalProperties: false
+      required: [activityId, algorithmVersion, available, climbs, gradeDistribution]
+      properties:
+        activityId: { type: string, format: uuid }
+        algorithmVersion: { type: string, examples: ['climbs/1'] }
+        available: { type: boolean }
+        climbs:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [startDistanceMeters, endDistanceMeters, lengthMeters, startAltitudeMeters, endAltitudeMeters,
+                       elevationGainMeters, averageGradePercent, maxGradePercent]
+            properties:
+              startDistanceMeters: { type: number }
+              endDistanceMeters: { type: number }
+              lengthMeters: { type: number }
+              startAltitudeMeters: { type: number }
+              endAltitudeMeters: { type: number }
+              elevationGainMeters: { type: number }
+              averageGradePercent: { type: number }
+              maxGradePercent: { type: number, description: Pendiente máxima sostenida en 100 m. }
+        gradeDistribution:
+          type: array
+          description: Metros por rango de pendiente; `fromPercent`/`toPercent` nulos en los extremos abiertos.
+          items:
+            type: object
+            additionalProperties: false
+            required: [fromPercent, toPercent, distanceMeters]
+            properties:
+              fromPercent: { type: ['number', 'null'] }
+              toPercent: { type: ['number', 'null'] }
+              distanceMeters: { type: number, minimum: 0 }
+    HeartRateZones:
+      type: object
+      additionalProperties: false
+      required: [algorithmVersion, from, to, includeIndoor, maxHeartRateBpm, activitiesWithHeartRate,
+                 activitiesWithoutHeartRate, belowZonesSeconds, zones]
+      properties:
+        algorithmVersion: { type: string, examples: ['hr-zones/1'] }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        includeIndoor: { type: boolean }
+        maxHeartRateBpm: { type: [integer, 'null'] }
+        activitiesWithHeartRate: { type: integer, minimum: 0 }
+        activitiesWithoutHeartRate: { type: integer, minimum: 0 }
+        belowZonesSeconds: { type: number, minimum: 0 }
+        zones:
+          type: array
+          maxItems: 5
+          items:
+            type: object
+            additionalProperties: false
+            required: [zone, fromBpm, toBpm, seconds]
+            properties:
+              zone: { type: integer, minimum: 1, maximum: 5 }
+              fromBpm: { type: integer }
+              toBpm: { type: [integer, 'null'], description: Incluido; null en la zona 5. }
+              seconds: { type: number, minimum: 0 }
+    TrainingLoad:
+      type: object
+      additionalProperties: false
+      required: [method, estimated, maxHeartRateBpm, includeIndoor, weeks]
+      properties:
+        method: { type: string, examples: ['edwards-trimp/1'] }
+        estimated: { type: boolean, const: true }
+        maxHeartRateBpm: { type: [integer, 'null'] }
+        includeIndoor: { type: boolean }
+        weeks:
+          type: array
+          maxItems: 104
+          items:
+            type: object
+            additionalProperties: false
+            required: [start, end, load, activitiesWithHeartRate, activitiesWithoutHeartRate]
+            properties:
+              start: { type: string, format: date }
+              end: { type: string, format: date }
+              load: { type: number, minimum: 0, description: Puntos TRIMP (estimación). }
+              activitiesWithHeartRate: { type: integer, minimum: 0 }
+              activitiesWithoutHeartRate: { type: integer, minimum: 0 }

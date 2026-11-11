@@ -2,21 +2,48 @@
 
 Aplicación Android nativa de **Velora**, plataforma personal de analítica de ciclismo (ruta y MTB).
 
-> Nombre provisional. Estado: Fase 0 — preparación. Aún no hay código de aplicación.
+> Estado: Fase 6, entrega 1 (base del proyecto). La especificación está en `../docs/07-android-application.md` del kit.
 
-## Stack previsto
+## Stack
 
-- Kotlin + Jetpack Compose.
-- Cliente generado o validado contra el contrato OpenAPI de `velora-api`.
-- Interfaz en español de México (`es-MX`) mediante recursos de strings.
+- Kotlin + Jetpack Compose + Material 3, tema propio de Velora (cempasúchil sobre niebla o noche, sin color dinámico).
+- **Android 12 (API 31) o posterior.** Se compila contra API 37 y apunta a API 37.
+- Cliente HTTP **generado del contrato OpenAPI** de `velora-api` (ADR-011) con openapi-generator (Ktor +
+  kotlinx.serialization) en cada build: si el contrato cambia y el código no, no compila.
+- Textos solo en `res/values/strings.xml` (es-MX).
 
-Las versiones exactas (AGP, Kotlin, Compose BOM, SDK mínimo/objetivo) se validarán al crear el scaffold (ver roadmap, Fase 0).
+## Módulos
 
-## Repositorios relacionados
+| Módulo | Qué contiene |
+|---|---|
+| `app` | Actividad, navegación y pantallas |
+| `core:designsystem` | `VeloraTheme` y colores (los mismos tokens que la web) |
+| `core:network` | Cliente generado (`mx.velora.android.api`) y `VeloraApi`, que lo configura para un servidor |
 
-- `velora-api` — backend (Java + Spring Boot).
-- `velora-web` — aplicación web (Next.js + TypeScript).
+Las siguientes entregas agregan `core:database` (Room), `core:model` y los módulos `feature:*`.
+
+## Contrato
+
+`contract/openapi-v1.yaml` es una copia del contrato de `velora-api` fijada al commit de `contract/REF`. Así el build
+no depende de la red y un cambio de contrato es un cambio explícito en este repositorio.
+
+```bash
+scripts/update-contract.sh <sha-de-velora-api>   # fija otro commit y descarga su contrato
+scripts/update-contract.sh --check               # comprueba la copia (lo corre el CI)
+```
+
+## Desarrollo
+
+Requiere JDK 21 o posterior y el SDK de Android (`local.properties` con `sdk.dir`).
+
+```bash
+./gradlew assembleDebug        # APK de depuración
+./gradlew testDebugUnitTest    # pruebas (JVM y Robolectric)
+./gradlew lintDebug            # lint: las advertencias fallan el build
+```
+
+Para probar en el emulador contra la API local, el servidor del emulador hacia la computadora es `http://10.0.2.2:8090`.
 
 ## Licencia
 
-[Apache-2.0](LICENSE).
+Apache-2.0.
