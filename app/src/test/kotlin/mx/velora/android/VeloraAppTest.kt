@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mx.velora.android.core.designsystem.VeloraTheme
+import mx.velora.android.core.session.SessionState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -24,10 +25,11 @@ class VeloraAppTest {
     @get:Rule val compose = createComposeRule()
 
     private val heading = SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)
+    private val account = SessionState.SignedIn("http://10.0.2.2:8090", "propietario@example.com")
 
     @Test
     fun startsAtHomeAndNavigatesBetweenSections() {
-        compose.setContent { VeloraTheme { VeloraApp() } }
+        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}) } }
 
         compose.onNodeWithText("Tus totales de la semana, el mes y el año, y tu rodada más reciente.").assertExists()
         // "Inicio" aparece dos veces: en la barra y como título de la pantalla.
@@ -41,7 +43,7 @@ class VeloraAppTest {
 
     @Test
     fun theBottomBarMarksTheCurrentSection() {
-        compose.setContent { VeloraTheme { VeloraApp() } }
+        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}) } }
         val bar = SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
 
         compose.onAllNodesWithText("Configuración").filterToOne(bar).assertIsNotSelected()

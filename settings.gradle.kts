@@ -19,3 +19,4 @@ rootProject.name = "velora-android"
 include(":app")
 include(":core:designsystem")
 include(":core:network")
+include(":core:session")

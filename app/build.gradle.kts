@@ -46,10 +46,11 @@ kotlin { jvmToolchain(17) }
 
 dependencies {
     implementation(project(":core:designsystem"))
-    implementation(project(":core:network"))
+    implementation(project(":core:session"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     debugImplementation(libs.compose.ui.tooling)
@@ -60,4 +61,5 @@ dependencies {
     testImplementation(libs.androidx.test.junit)
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.ktor.client.mock)
 }

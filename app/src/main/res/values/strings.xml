@@ -11,5 +11,38 @@
     <string name="home_body">Tus totales de la semana, el mes y el año, y tu rodada más reciente.</string>
     <string name="activities_body">Todas tus rodadas, con filtros, y tus archivos FIT, GPX o TCX para importarlos.</string>
     <string name="performance_body">Tu distancia y desnivel por semana y por mes, tus récords y tu número de Eddington.</string>
-    <string name="settings_body">El servidor de Velora al que te conectas, tu sesión y tus preferencias.</string>
+
+    <!-- Inicio de sesión (mismos mensajes que la web) -->
+    <string name="login_title">Iniciar sesión</string>
+    <string name="login_subtitle">Entra a tu historial de rodadas.</string>
+    <string name="login_server">Servidor de Velora</string>
+    <string name="login_server_hint">La dirección donde corre tu Velora, por ejemplo https://velora.tu-dominio.mx.</string>
+    <string name="login_email">Correo electrónico</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_show_password">Mostrar</string>
+    <string name="login_hide_password">Ocultar</string>
+    <string name="login_show_password_description">Mostrar la contraseña</string>
+    <string name="login_hide_password_description">Ocultar la contraseña</string>
+    <string name="login_submit">Entrar</string>
+    <string name="login_submitting">Entrando…</string>
+    <string name="login_expired">Tu sesión terminó. Vuelve a entrar para continuar.</string>
+    <string name="login_error_required">Escribe el servidor, tu correo y tu contraseña.</string>
+    <string name="login_error_server">Escribe la dirección completa del servidor, con http:// o https:// y sin ruta.</string>
+    <string name="login_error_cleartext">Usa una dirección https://: esta versión de la app no envía tu contraseña sin cifrar.</string>
+    <string name="login_error_credentials">Correo o contraseña incorrectos.</string>
+    <plurals name="login_error_too_many">
+        <item quantity="one">Demasiados intentos. Espera %d minuto antes de volver a intentarlo.</item>
+        <item quantity="many">Demasiados intentos. Espera %d minutos antes de volver a intentarlo.</item>
+        <item quantity="other">Demasiados intentos. Espera %d minutos antes de volver a intentarlo.</item>
+    </plurals>
+    <string name="login_error_input">Revisa que el correo tenga un formato válido.</string>
+    <string name="login_error_unreachable">No pudimos conectar con el servidor. Revisa la dirección y que Velora esté encendido.</string>
+    <string name="login_error_unavailable">El servidor respondió con un error o no parece ser Velora. Intenta de nuevo en unos momentos.</string>
+
+    <!-- Configuración -->
+    <string name="settings_account">Cuenta</string>
+    <string name="settings_email">Correo</string>
+    <string name="settings_server">Servidor</string>
+    <string name="settings_logout">Cerrar sesión</string>
+    <string name="settings_logout_hint">Para volver a entrar necesitarás tu contraseña.</string>
 </resources>
