@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos en español de México (es-MX). Nada de texto visible fuera de aquí. -->
+<resources>
+    <string name="app_name">Velora</string>
+    <string name="nav_label">Navegación principal</string>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_activities">Actividades</string>
+    <string name="nav_performance">Rendimiento</string>
+    <string name="nav_settings">Configuración</string>
+    <string name="soon">En preparación</string>
+    <string name="home_body">Tus totales de la semana, el mes y el año, y tu rodada más reciente.</string>
+    <string name="activities_body">Todas tus rodadas, con filtros, y tus archivos FIT, GPX o TCX para importarlos.</string>
+    <string name="performance_body">Tu distancia y desnivel por semana y por mes, tus récords y tu número de Eddington.</string>
+    <string name="settings_body">El servidor de Velora al que te conectas, tu sesión y tus preferencias.</string>
+</resources>
