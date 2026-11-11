@@ -69,7 +69,7 @@ kotlin { jvmToolchain(17) }
 
 dependencies {
     implementation(project(":core:designsystem"))
-    implementation(project(":core:session"))
+    implementation(project(":core:data"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
