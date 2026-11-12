@@ -44,8 +44,28 @@ Requiere JDK 21 o posterior y el SDK de Android (`local.properties` con `sdk.dir
 ./gradlew :core:session:connectedDebugAndroidTest   # cifrado con el Keystore real (emulador encendido)
 ```
 
+La app arranca apuntando al servidor desplegado, `https://velora-api.franciscolopez.uk`, y se puede cambiar en el login.
 Para probar en el emulador contra la API local, el servidor del emulador hacia la computadora es `http://10.0.2.2:8090`.
 Solo la versión de desarrollo acepta `http://`; la publicable exige HTTPS (ADR-022).
+
+## Release
+
+`.github/workflows/release.yml` publica la app como en `nexora-android`. Cada tag `vX.Y.Z` corre las pruebas y el
+lint, compila y firma el APK y lo publica como [Release de GitHub](https://github.com/1franky/velora-android/releases)
+(`velora-android-vX.Y.Z.apk`). El tag debe coincidir con `versionName` de `app/build.gradle.kts`.
+
+Para cerrar una versión:
+
+```bash
+# 1. Sube versionCode y versionName en app/build.gradle.kts (PR e integración a main)
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+La llave de firma vive en GitHub Secrets (`RELEASE_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
+`KEY_PASSWORD`), nunca en el repositorio. `scripts/configurar-secretos-release.sh` los sube a partir de
+`keystore.properties`, que también sirve para compilar `assembleRelease` en local (ver `keystore.properties.example`).
+**Guarda una copia de la llave y sus contraseñas fuera de esta computadora:** sin ellas, Android no acepta una versión
+nueva sobre la ya instalada.
 
 ## Licencia
 

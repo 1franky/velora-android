@@ -96,6 +96,12 @@ class LoginFlowTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
 
     @Test
+    fun startsWithTheDeployedServer() {
+        start()
+        field("Servidor de Velora").assert(hasText("https://velora-api.franciscolopez.uk"))
+    }
+
+    @Test
     fun asksForEverythingBeforeCallingTheApi() {
         start()
         submit()

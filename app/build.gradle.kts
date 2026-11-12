@@ -1,8 +1,21 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+/**
+ * Firma de release, como en nexora-android: en el CI llega por variables de entorno (GitHub Secrets, ver
+ * .github/workflows/release.yml); en local, de `keystore.properties` (gitignored, ver keystore.properties.example). Sin
+ * ninguna de las dos, solo falla `assembleRelease`; debug y pruebas no se ven afectados.
+ */
+val keystoreProperties = Properties().apply {
+    rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
+fun releaseSigning(key: String, env: String): String? = System.getenv(env) ?: keystoreProperties.getProperty(key)
 
 android {
     namespace = "mx.velora.android"
@@ -20,8 +33,18 @@ android {
         androidResources.localeFilters += listOf("es-rMX", "es")
     }
 
+    signingConfigs {
+        create("release") {
+            releaseSigning("storeFile", "KEYSTORE_PATH")?.let { storeFile = file(it) }
+            storePassword = releaseSigning("storePassword", "KEYSTORE_PASSWORD")
+            keyAlias = releaseSigning("keyAlias", "KEY_ALIAS")
+            keyPassword = releaseSigning("keyPassword", "KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

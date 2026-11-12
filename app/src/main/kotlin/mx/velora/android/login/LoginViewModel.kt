@@ -28,9 +28,14 @@ sealed interface LoginError {
     data object Unavailable : LoginError
 }
 
-class LoginViewModel(private val session: SessionManager, private val allowCleartext: Boolean) : ViewModel() {
+class LoginViewModel(
+    private val session: SessionManager,
+    private val allowCleartext: Boolean,
+    /** El servidor desplegado: el campo arranca con él si nunca se ha entrado a otro. */
+    defaultServerUrl: String,
+) : ViewModel() {
 
-    var server by mutableStateOf("")
+    var server by mutableStateOf(defaultServerUrl)
     var email by mutableStateOf("")
     var password by mutableStateOf("")
     var error by mutableStateOf<LoginError?>(null)
@@ -39,8 +44,11 @@ class LoginViewModel(private val session: SessionManager, private val allowClear
         private set
 
     init {
-        // El último servidor usado, para no escribirlo cada vez.
-        viewModelScope.launch { session.lastServerUrl()?.let { if (server.isEmpty()) server = it } }
+        // El último servidor usado tiene prioridad, para no escribirlo cada vez.
+        viewModelScope.launch {
+            val last = session.lastServerUrl()
+            if (last != null && server == defaultServerUrl) server = last
+        }
     }
 
     fun submit() {
