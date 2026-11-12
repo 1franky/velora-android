@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mx.velora.android.core.data.ActivitiesRepository
+import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
 import mx.velora.android.core.database.VeloraDatabase
 import mx.velora.android.core.session.SessionManager
@@ -28,6 +29,9 @@ class VeloraApplication : Application() {
     lateinit var activities: ActivitiesRepository
         private set
 
+    lateinit var details: ActivityDetailRepository
+        private set
+
     val allowCleartext: Boolean get() = resources.getBoolean(R.bool.allow_cleartext)
 
     override fun onCreate() {
@@ -36,6 +40,7 @@ class VeloraApplication : Application() {
         val database = VeloraDatabase.create(this)
         dashboard = DashboardRepository(session, database.dashboard())
         activities = ActivitiesRepository(session, database.activities())
+        details = ActivityDetailRepository(session)
         appScope.launch {
             session.restore()
             // Sin sesión no quedan datos de la cuenta en el teléfono (ADR-023).

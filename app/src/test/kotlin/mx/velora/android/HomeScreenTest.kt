@@ -35,6 +35,7 @@ import mx.velora.android.core.session.StoredSession
 import mx.velora.android.home.HomeScreen
 import mx.velora.android.home.HomeViewModel
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -78,6 +79,7 @@ class HomeScreenTest {
     ).also { runBlocking { it.restore() } }
 
     private val repository = DashboardRepository(session, db.dashboard())
+    @Volatile private var opened: String? = null
 
     @After
     fun tearDown() {
@@ -85,7 +87,7 @@ class HomeScreenTest {
         db.close()
     }
 
-    private fun start() = compose.setContent { VeloraTheme { HomeScreen(viewModel { HomeViewModel(repository) }) } }
+    private fun start() = compose.setContent { VeloraTheme { HomeScreen(viewModel { HomeViewModel(repository) }, onOpenActivity = { opened = it }) } }
 
     private fun waitForText(text: String) =
         compose.waitUntil(5_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
@@ -104,6 +106,8 @@ class HomeScreenTest {
         compose.onNodeWithText("octubre de 2026: 99.6 km en 1 rodada").assertExists()
         compose.onNodeWithText("Vuelta al Ajusco", useUnmergedTree = true).performScrollTo().assertExists()
         compose.onNodeWithText("Carretera", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Vuelta al Ajusco", useUnmergedTree = true).performClick()
+        assertEquals("6f1c3c62-5a0e-4a4e-9a51-0b2c8f8d2f10", opened)
         assertTrue(queries.single().contains("period=month"))
     }
 

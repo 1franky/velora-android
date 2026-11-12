@@ -2,6 +2,7 @@ package mx.velora.android.home
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,7 +54,7 @@ import mx.velora.android.ui.Formats
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
+fun HomeScreen(viewModel: HomeViewModel, onOpenActivity: (String) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     PullToRefreshBox(
         isRefreshing = state.refreshing && state.summary != null,
@@ -71,7 +72,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
             )
             PeriodSelector(state.period, viewModel::select)
             Status(state)
-            Body(state, onRetry = viewModel::refresh)
+            Body(state, onRetry = viewModel::refresh, onOpen = onOpenActivity)
         }
     }
 }
@@ -111,11 +112,11 @@ private fun Status(state: HomeState) {
 }
 
 @Composable
-private fun Body(state: HomeState, onRetry: () -> Unit) {
+private fun Body(state: HomeState, onRetry: () -> Unit, onOpen: (String) -> Unit) {
     val cached = state.summary
     when {
         cached != null ->
-            if (cached.value.latestActivity == null) Empty() else Summary(cached.value, state.period)
+            if (cached.value.latestActivity == null) Empty() else Summary(cached.value, state.period, onOpen)
         state.reading || state.lastRefresh == null || state.refreshing -> Loading()
         state.lastRefresh == RefreshResult.SESSION_ENDED -> Unit
         else -> Unavailable(onRetry)
@@ -155,7 +156,7 @@ private fun Empty() {
 }
 
 @Composable
-private fun Summary(summary: DashboardSummary, period: Period) {
+private fun Summary(summary: DashboardSummary, period: Period, onOpen: (String) -> Unit) {
     val current = summary.current
     val previous = summary.previous
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -172,7 +173,7 @@ private fun Summary(summary: DashboardSummary, period: Period) {
         }
     }
     MonthlyTrend(summary.monthlyTrend)
-    summary.latestActivity?.let { LatestActivity(it) }
+    summary.latestActivity?.let { LatestActivity(it, onOpen = { onOpen(it.id.toString()) }) }
 }
 
 @Composable
@@ -233,7 +234,7 @@ private fun Total(@StringRes label: Int, value: String, delta: @Composable () ->
 }
 
 @Composable
-private fun LatestActivity(activity: ActivitySummary) {
+private fun LatestActivity(activity: ActivitySummary, onOpen: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             stringResource(R.string.home_latest_title),
@@ -242,7 +243,7 @@ private fun LatestActivity(activity: ActivitySummary) {
         )
         OutlinedPanel {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp).semantics(mergeDescendants = true) {},
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(16.dp).semantics(mergeDescendants = true) {},
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {

@@ -11,6 +11,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as VeloraApplication
-        setContent { VeloraTheme { VeloraRoot(app.session, app.allowCleartext, app.dashboard, app.activities) } }
+        setContent { VeloraTheme { VeloraRoot(app.session, app.allowCleartext, app.dashboard, app.activities, app.details) } }
     }
 }

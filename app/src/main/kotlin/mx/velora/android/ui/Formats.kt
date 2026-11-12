@@ -38,6 +38,28 @@ object Formats {
 
     fun count(value: Int): String = integer.format(value)
 
+    private val upToOneDecimal = decimals(0, 1)
+
+    /** Número con hasta un decimal, sin unidad (pendientes, valores de gráficas). */
+    fun decimal(value: Double, digits: Int): String = decimals(digits, digits).format(value)
+
+    /** Pendiente en %, con hasta un decimal: "6.5 %". */
+    fun grade(percent: Double): String = "${upToOneDecimal.format(percent)} %"
+
+    /** Tamaño de archivo en kB o MB (base 1024), como la web. */
+    fun fileSize(bytes: Long): String {
+        val kb = bytes / 1024.0
+        return if (kb < 1024) "${integer.format(kb.coerceAtLeast(1.0))} kB" else "${upToOneDecimal.format(kb / 1024)} MB"
+    }
+
+    private val time24 = DateTimeFormatter.ofPattern("HH:mm", LOCALE)
+
+    /** Hora (24 h) de un instante en la zona de la rodada; si la zona no es válida, en la del teléfono. */
+    fun time(instant: java.time.OffsetDateTime, zone: String): String {
+        val id = runCatching { ZoneId.of(zone) }.getOrDefault(ZoneId.systemDefault())
+        return instant.atZoneSameInstant(id).format(time24)
+    }
+
     /** h:mm:ss, también para más de un día (30:01:01). */
     fun duration(seconds: Long?): String {
         if (seconds == null) return MISSING

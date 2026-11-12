@@ -45,7 +45,13 @@ val generateApi by tasks.registering(GenerateTask::class) {
     // Números como Double (kotlinx.serialization no serializa BigDecimal) y el enum entero de privacidad como Int (el
     // generador lo emite mal: valores Int en un enum de String).
     typeMappings.set(mapOf("number" to "kotlin.Double", "decimal" to "kotlin.Double"))
-    schemaMappings.set(mapOf("TrackPrivacyMeters" to "kotlin.Int"))
+    // El rango de pendiente: sus límites nulos se generan como obligatorios (ver GradeBucket).
+    schemaMappings.set(
+        mapOf(
+            "TrackPrivacyMeters" to "kotlin.Int",
+            "ActivityClimbs_gradeDistribution_inner" to "mx.velora.android.core.network.GradeBucket",
+        ),
+    )
     cleanupOutput.set(true)
     generateApiTests.set(false)
     generateModelTests.set(false)

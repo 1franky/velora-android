@@ -105,6 +105,81 @@
     <string name="activities_offline">Sin conexión con el servidor. Estas son las rodadas guardadas en el teléfono.</string>
     <string name="activities_more_failed">No pudimos cargar más actividades. Intenta de nuevo.</string>
 
+    <!-- Detalle de una rodada (mismos textos que la web) -->
+    <string name="detail_back">Volver a actividades</string>
+    <string name="detail_back_home">Volver a Inicio</string>
+    <string name="detail_loading">Cargando la rodada…</string>
+    <string name="detail_unavailable">No pudimos cargar esta rodada. Intenta de nuevo en unos momentos.</string>
+    <string name="detail_offline">Sin conexión con el servidor. El detalle de una rodada necesita conexión.</string>
+    <string name="detail_not_found">Esta rodada ya no existe. Quizá la borraste desde otro dispositivo.</string>
+    <string name="detail_metrics">Métricas</string>
+    <string name="detail_distance">Distancia</string>
+    <string name="detail_moving_time">Tiempo en movimiento</string>
+    <string name="detail_elapsed_time">Tiempo total</string>
+    <string name="detail_elevation_gain">Desnivel positivo</string>
+    <string name="detail_elevation_loss">Desnivel negativo</string>
+    <string name="detail_average_speed">Velocidad media</string>
+    <string name="detail_max_speed">Velocidad máxima</string>
+    <string name="detail_average_heart_rate">Frecuencia cardiaca media</string>
+    <string name="detail_max_heart_rate">Frecuencia cardiaca máxima</string>
+    <string name="detail_average_power">Potencia media</string>
+    <string name="detail_max_power">Potencia máxima</string>
+    <string name="detail_average_cadence">Cadencia media</string>
+    <string name="detail_bpm">%s ppm</string>
+    <string name="detail_watts">%s W</string>
+    <string name="detail_rpm">%s rpm</string>
+    <string name="detail_derived">Calculada por Velora</string>
+    <!-- %1$s: FIT, GPX o TCX; %2$s: tamaño; %3$s: fecha. -->
+    <string name="detail_source">Importada de un archivo %1$s de %2$s el %3$s.</string>
+    <!-- %1$s: fecha con día de la semana; %2$s: hora de inicio (24 h). -->
+    <string name="detail_started">%1$s, %2$s</string>
+
+    <string name="charts_title">Gráficas</string>
+    <string name="charts_axis">Eje horizontal</string>
+    <string name="charts_axis_distance">Distancia</string>
+    <string name="charts_axis_time">Tiempo</string>
+    <string name="charts_hint">Toca o desliza sobre una gráfica para ver los valores.</string>
+    <string name="charts_at_distance">En el km %s</string>
+    <string name="charts_at_time">A las %s del inicio</string>
+    <string name="charts_range">mín. %1$s, máx. %2$s</string>
+    <string name="charts_no_value">sin dato</string>
+    <string name="charts_series_altitude">Altitud</string>
+    <string name="charts_series_speed">Velocidad</string>
+    <string name="charts_series_heart_rate">Frecuencia cardiaca</string>
+    <string name="charts_series_power">Potencia</string>
+    <string name="charts_series_cadence">Cadencia</string>
+    <string name="charts_series_temperature">Temperatura</string>
+    <string name="charts_unavailable">No pudimos cargar las gráficas. Intenta de nuevo en unos momentos.</string>
+
+    <string name="laps_title">Vueltas</string>
+    <string name="laps_lap">Vuelta %d</string>
+    <string name="laps_distance">Distancia</string>
+    <string name="laps_time">Tiempo</string>
+    <string name="laps_speed">Vel. media</string>
+    <string name="laps_heart_rate">FC media</string>
+    <string name="laps_power">Potencia media</string>
+    <string name="laps_cadence">Cadencia media</string>
+    <string name="laps_unavailable">No pudimos cargar las vueltas.</string>
+
+    <string name="climbs_title">Subidas</string>
+    <string name="climbs_none">Esta rodada no tiene subidas que cumplan la regla.</string>
+    <!-- %1$s y %2$s: distancias ya formateadas, p. ej. "1.0 km". -->
+    <string name="climbs_range">Del %1$s al %2$s</string>
+    <string name="climbs_length">Longitud</string>
+    <string name="climbs_gain">Desnivel</string>
+    <string name="climbs_average">Pendiente media</string>
+    <string name="climbs_max">Máxima en 100 m</string>
+    <string name="climbs_grades">Distancia por pendiente</string>
+    <string name="climbs_bin_steep_down">Bajada fuerte (más de 8 %)</string>
+    <string name="climbs_bin_down">Bajada (4 a 8 %)</string>
+    <string name="climbs_bin_gentle_down">Bajada suave (1 a 4 %)</string>
+    <string name="climbs_bin_flat">Llano (menos de 1 %)</string>
+    <string name="climbs_bin_gentle_up">Subida suave (1 a 4 %)</string>
+    <string name="climbs_bin_up">Subida (4 a 8 %)</string>
+    <string name="climbs_bin_steep_up">Subida fuerte (más de 8 %)</string>
+    <string name="climbs_rule">Una subida cuenta si gana al menos 25 m en 300 m o más, con pendiente media de 3 % o más; un rellano corto no la corta. La altitud se suaviza para que el ruido del sensor no invente subidas.</string>
+    <string name="climbs_unavailable">No pudimos cargar las subidas.</string>
+
     <!-- Inicio de sesión (mismos mensajes que la web) -->
     <string name="login_title">Iniciar sesión</string>
     <string name="login_subtitle">Entra a tu historial de rodadas.</string>

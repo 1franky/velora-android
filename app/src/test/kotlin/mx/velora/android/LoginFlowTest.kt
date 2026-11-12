@@ -27,6 +27,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import mx.velora.android.core.data.ActivitiesRepository
+import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
 import mx.velora.android.core.database.VeloraDatabase
 import mx.velora.android.core.designsystem.VeloraTheme
@@ -94,7 +95,7 @@ class LoginFlowTest {
 
     private fun start(allowCleartext: Boolean = true) {
         runBlocking { session.restore() }
-        compose.setContent { VeloraTheme { VeloraRoot(session, allowCleartext, DashboardRepository(session, db.dashboard()), ActivitiesRepository(session, db.activities())) } }
+        compose.setContent { VeloraTheme { VeloraRoot(session, allowCleartext, DashboardRepository(session, db.dashboard()), ActivitiesRepository(session, db.activities()), ActivityDetailRepository(session)) } }
     }
 
     private fun field(label: String) = compose.onNode(hasSetTextAction() and hasText(label))

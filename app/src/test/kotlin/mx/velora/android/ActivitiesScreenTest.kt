@@ -97,13 +97,14 @@ class ActivitiesScreenTest {
     ).also { runBlocking { it.restore() } }
 
     private val repository = ActivitiesRepository(session, db.activities())
+    @Volatile private var opened: String? = null
 
     // La base en memoria no se cierra: el ViewModel vive hasta que la regla de Compose destruye la actividad, después de
     // @After, y una página aún en camino escribiría en una conexión cerrada.
     @After
     fun tearDown() = scope.cancel()
 
-    private fun start() = compose.setContent { VeloraTheme { ActivitiesScreen(viewModel { ActivitiesViewModel(repository) }) } }
+    private fun start() = compose.setContent { VeloraTheme { ActivitiesScreen(viewModel { ActivitiesViewModel(repository) }, onOpen = { opened = it }) } }
 
     private fun waitForText(text: String) =
         compose.waitUntil(5_000) { compose.onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
@@ -120,6 +121,8 @@ class ActivitiesScreenTest {
         waitForText("Rodada del 20")
         waitForText("3 actividades en pantalla")
         compose.onAllNodesWithText("Mostrar más").fetchSemanticsNodes().let { assertTrue(it.isEmpty()) }
+        compose.onNodeWithText("Rodada del 20", useUnmergedTree = true).performClick()
+        assertEquals("00000000-0000-4000-8000-000000000020", opened)
     }
 
     @Test
