@@ -8,7 +8,6 @@
     <string name="nav_performance">Rendimiento</string>
     <string name="nav_settings">Configuración</string>
     <string name="soon">En preparación</string>
-    <string name="activities_body">Todas tus rodadas, con filtros, y tus archivos FIT, GPX o TCX para importarlos.</string>
     <string name="performance_body">Tu distancia y desnivel por semana y por mes, tus récords y tu número de Eddington.</string>
 
     <!-- Inicio (mismos textos que la web) -->
@@ -61,6 +60,50 @@
     <string name="activity_distance">Distancia</string>
     <string name="activity_moving_time">En movimiento</string>
     <string name="activity_elevation">Desnivel</string>
+    <string name="activity_speed">Vel. media</string>
+
+    <!-- Actividades (mismos textos que la web) -->
+    <string name="activities_list_label">Tus actividades, de la más reciente a la más antigua</string>
+    <string name="activities_show_more">Mostrar más</string>
+    <string name="activities_loading_more">Cargando…</string>
+    <string name="activities_loading">Cargando tus actividades…</string>
+    <plurals name="activities_count">
+        <item quantity="one">%s actividad en pantalla</item>
+        <item quantity="many">%s actividades en pantalla</item>
+        <item quantity="other">%s actividades en pantalla</item>
+    </plurals>
+    <string name="activities_filters">Filtros</string>
+    <plurals name="activities_filters_active">
+        <item quantity="one">Filtros (%d activo)</item>
+        <item quantity="many">Filtros (%d activos)</item>
+        <item quantity="other">Filtros (%d activos)</item>
+    </plurals>
+    <string name="activities_filter_type">Tipo</string>
+    <string name="activities_filter_any_type">Todos</string>
+    <string name="activities_filter_bike">Bicicleta</string>
+    <string name="activities_filter_any_bike">Todas</string>
+    <string name="activities_filter_bikes_unavailable">No pudimos cargar tus bicicletas.</string>
+    <string name="activities_filter_from">Desde</string>
+    <string name="activities_filter_to">Hasta</string>
+    <!-- %1$s: "Desde" o "Hasta"; %2$s: fecha. -->
+    <string name="activities_filter_date_value">%1$s: %2$s</string>
+    <string name="activities_filter_date_any">%1$s: cualquier fecha</string>
+    <string name="activities_filter_clear_date">Quitar fecha</string>
+    <string name="activities_filter_min_km">Distancia mínima (km)</string>
+    <string name="activities_filter_max_km">Distancia máxima (km)</string>
+    <string name="activities_filter_apply">Aplicar filtros</string>
+    <string name="activities_filter_clear">Quitar filtros</string>
+    <string name="activities_filter_check">Revisa que las fechas y las distancias estén en orden y sean números válidos.</string>
+    <string name="date_picker_ok">Aceptar</string>
+    <string name="date_picker_cancel">Cancelar</string>
+    <string name="activities_empty_title">Aún no tienes actividades</string>
+    <string name="activities_empty_body">Importa los archivos FIT, GPX o TCX de tu ciclocomputadora o reloj para ver aquí tus rodadas.</string>
+    <string name="activities_no_matches_title">Ninguna actividad coincide con los filtros</string>
+    <string name="activities_no_matches_body">Prueba con otro rango de fechas o de distancia.</string>
+    <string name="activities_invalid">La API rechazó los filtros. Revisa las fechas y las distancias.</string>
+    <string name="activities_unavailable">No pudimos cargar tus actividades. Intenta de nuevo en unos momentos.</string>
+    <string name="activities_offline">Sin conexión con el servidor. Estas son las rodadas guardadas en el teléfono.</string>
+    <string name="activities_more_failed">No pudimos cargar más actividades. Intenta de nuevo.</string>
 
     <!-- Inicio de sesión (mismos mensajes que la web) -->
     <string name="login_title">Iniciar sesión</string>

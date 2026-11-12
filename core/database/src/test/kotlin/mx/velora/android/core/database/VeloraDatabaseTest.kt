@@ -38,4 +38,20 @@ class VeloraDatabaseTest {
 
         assertNull(db.dashboard().observe("month").first())
     }
+
+    private fun ride(id: String, at: Long) =
+        ActivityEntity(id, "Rodada $id", "2026-11-10T13:05:00Z", at, "2026-11-10", "ROAD", 1000.0, 60, 60, null, null, null)
+
+    @Test
+    fun aPageReplacesItsRangeAndKeepsTheRest() = runTest {
+        val dao = db.activities()
+        dao.upsert(listOf(ride("a", 500), ride("b", 400), ride("borrada", 300), ride("c", 200), ride("vieja", 100)))
+
+        // La API ya no tiene "borrada": entre 200 y 500 solo quedan a, b y c (con título nuevo).
+        dao.replaceRange(500, 200, listOf(ride("a", 500), ride("b", 400).copy(title = "Nuevo título"), ride("c", 200)))
+
+        val all = dao.observeAll().first()
+        assertEquals(listOf("a", "b", "c", "vieja"), all.map { it.id })
+        assertEquals("Nuevo título", all[1].title)
+    }
 }

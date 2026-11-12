@@ -18,6 +18,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     testOptions { unitTests.isIncludeAndroidResources = true }
+    // Las pruebas de migración leen los esquemas exportados.
+    sourceSets["test"].assets.directories.add("$projectDir/schemas")
 }
 
 kotlin { jvmToolchain(17) }
@@ -34,4 +36,5 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.room.testing)
 }
