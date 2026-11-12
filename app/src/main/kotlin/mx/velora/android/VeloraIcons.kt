@@ -9,8 +9,9 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
 /**
- * Íconos de trazo (24 dp) para la barra inferior, dibujados aquí para no sumar la biblioteca completa de íconos de
- * Material (varios MB) por cuatro figuras. Mismo estilo de línea que los de la web (Lucide).
+ * Íconos de trazo (24 dp) para la barra inferior y los cambios entre periodos, dibujados aquí para no sumar la
+ * biblioteca completa de íconos de Material (varios MB) por unas cuantas figuras. Mismo estilo de línea que los de la
+ * web (Lucide).
  */
 object VeloraIcons {
     private fun stroke(name: String, vararg paths: String): ImageVector {
@@ -31,6 +32,9 @@ object VeloraIcons {
     val Home = stroke("Inicio", "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z")
     val Activities = stroke("Actividades", "M3 12h4l3 8 4-16 3 8h4")
     val Performance = stroke("Rendimiento", "M4 20V10", "M10 20V4", "M16 20v-7", "M22 20H2")
+    val TrendUp = stroke("Sube", "M22 7 13.5 15.5 8.5 10.5 2 17", "M16 7h6v6")
+    val TrendDown = stroke("Baja", "M22 17 13.5 8.5 8.5 13.5 2 7", "M16 17h6v-6")
+    val Same = stroke("Igual", "M5 12h14")
     val Settings = stroke(
         "Configuración",
         "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",

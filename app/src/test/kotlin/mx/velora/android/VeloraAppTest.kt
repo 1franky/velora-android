@@ -1,5 +1,6 @@
 package mx.velora.android
 
+import androidx.compose.material3.Text
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsSelected
@@ -12,7 +13,6 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mx.velora.android.core.designsystem.VeloraTheme
 import mx.velora.android.core.session.SessionState
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,11 +29,9 @@ class VeloraAppTest {
 
     @Test
     fun startsAtHomeAndNavigatesBetweenSections() {
-        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}) } }
+        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { Text("Contenido de Inicio") }) } }
 
-        compose.onNodeWithText("Tus totales de la semana, el mes y el año, y tu rodada más reciente.").assertExists()
-        // "Inicio" aparece dos veces: en la barra y como título de la pantalla.
-        assertEquals(2, compose.onAllNodesWithText("Inicio").fetchSemanticsNodes().size)
+        compose.onNodeWithText("Contenido de Inicio").assertExists()
 
         compose.onNodeWithText("Rendimiento").performClick()
         compose.onNodeWithText("Tu distancia y desnivel por semana y por mes, tus récords y tu número de Eddington.")
@@ -43,7 +41,7 @@ class VeloraAppTest {
 
     @Test
     fun theBottomBarMarksTheCurrentSection() {
-        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}) } }
+        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { Text("Contenido de Inicio") }) } }
         val bar = SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
 
         compose.onAllNodesWithText("Configuración").filterToOne(bar).assertIsNotSelected()

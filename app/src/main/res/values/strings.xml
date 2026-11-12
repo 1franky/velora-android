@@ -8,9 +8,59 @@
     <string name="nav_performance">Rendimiento</string>
     <string name="nav_settings">Configuración</string>
     <string name="soon">En preparación</string>
-    <string name="home_body">Tus totales de la semana, el mes y el año, y tu rodada más reciente.</string>
     <string name="activities_body">Todas tus rodadas, con filtros, y tus archivos FIT, GPX o TCX para importarlos.</string>
     <string name="performance_body">Tu distancia y desnivel por semana y por mes, tus récords y tu número de Eddington.</string>
+
+    <!-- Inicio (mismos textos que la web) -->
+    <string name="home_periods">Periodo</string>
+    <string name="home_period_week">Semana</string>
+    <string name="home_period_month">Mes</string>
+    <string name="home_period_year">Año</string>
+    <string name="home_period_all">Todo</string>
+    <!-- %1$s: distancia ya formateada; %2$s: "3 rodadas". -->
+    <string name="home_headline_week">Esta semana: %1$s en %2$s</string>
+    <string name="home_headline_month">Este mes: %1$s en %2$s</string>
+    <string name="home_headline_year">Este año: %1$s en %2$s</string>
+    <string name="home_headline_all">En total: %1$s en %2$s</string>
+    <plurals name="home_rides">
+        <item quantity="one">%s rodada</item>
+        <item quantity="many">%s rodadas</item>
+        <item quantity="other">%s rodadas</item>
+    </plurals>
+    <string name="home_no_rides_week">Esta semana aún no tienes rodadas</string>
+    <string name="home_no_rides_month">Este mes aún no tienes rodadas</string>
+    <string name="home_no_rides_year">Este año aún no tienes rodadas</string>
+    <string name="home_total_moving_time">Tiempo en movimiento</string>
+    <string name="home_total_elevation">Desnivel positivo</string>
+    <string name="home_previous_week">la semana pasada</string>
+    <string name="home_previous_month">el mes pasado</string>
+    <string name="home_previous_year">el año pasado</string>
+    <!-- %1$s: porcentaje; %2$s: "el mes pasado". -->
+    <string name="home_change_up">%1$s más que %2$s</string>
+    <string name="home_change_down">%1$s menos que %2$s</string>
+    <string name="home_change_same">Igual que %1$s</string>
+    <string name="home_change_from_zero">Sin rodadas %1$s</string>
+    <string name="home_trend_title">Últimos 12 meses</string>
+    <!-- %1$s: "noviembre de 2026"; %2$s: distancia; %3$s: "3 rodadas". -->
+    <string name="home_trend_readout">%1$s: %2$s en %3$s</string>
+    <string name="home_latest_title">Tu rodada más reciente</string>
+    <string name="home_empty_title">Aún no tienes actividades</string>
+    <string name="home_empty_body">Importa los archivos FIT, GPX o TCX de tu ciclocomputadora o reloj y aquí verás tus kilómetros, tu tiempo y tu desnivel.</string>
+    <string name="home_unavailable">No pudimos cargar tu resumen. Intenta de nuevo en unos momentos.</string>
+    <string name="home_offline">Sin conexión con el servidor. Datos del %1$s.</string>
+    <string name="home_stale">No pudimos actualizar tu resumen. Datos del %1$s.</string>
+    <string name="home_loading">Cargando tu resumen…</string>
+    <string name="retry">Reintentar</string>
+
+    <!-- Rodadas -->
+    <string name="activity_type_mountain_bike">Montaña</string>
+    <string name="activity_type_road">Carretera</string>
+    <string name="activity_type_gravel">Gravel</string>
+    <string name="activity_type_indoor">Rodillo</string>
+    <string name="activity_type_other">Otra</string>
+    <string name="activity_distance">Distancia</string>
+    <string name="activity_moving_time">En movimiento</string>
+    <string name="activity_elevation">Desnivel</string>
 
     <!-- Inicio de sesión (mismos mensajes que la web) -->
     <string name="login_title">Iniciar sesión</string>

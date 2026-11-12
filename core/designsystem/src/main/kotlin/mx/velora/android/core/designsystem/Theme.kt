@@ -6,6 +6,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -24,6 +27,9 @@ object VeloraColors {
     /** Acento para elementos no textuales (gráficas, carriles). */
     val AcentoMedio = Color(0xFFC76A0E)
     val Negativo = Color(0xFFA3392A)
+    val Positivo = Color(0xFF2F6B4F)
+    /** Barras de contexto en gráficas (3.28:1 sobre blanco). */
+    val GraficaTenue = Color(0xFF848F9D)
 
     val Noche = Color(0xFF121A24)
     val SuperficieNoche = Color(0xFF1B2532)
@@ -33,7 +39,26 @@ object VeloraColors {
     val TintaSuaveNoche = Color(0xFFA7B2BF)
     val AcentoNoche = Color(0xFFF2A03D)
     val NegativoNoche = Color(0xFFF08A78)
+    val PositivoNoche = Color(0xFF6FC59A)
+    /** El acento oscuro (#F2A03D) es demasiado claro para un trazo. */
+    val GraficaNoche = Color(0xFFD07C26)
+    val GraficaTenueNoche = Color(0xFF6B7888)
 }
+
+/** Colores que Material 3 no tiene: gráficas y cambios positivos. Los mismos tokens que la web. */
+@Immutable
+data class VeloraExtraColors(
+    /** El dato que importa en una gráfica (el mes actual). */
+    val chart: Color,
+    /** Datos de contexto en una gráfica. */
+    val chartContext: Color,
+    val positive: Color,
+)
+
+private val LightExtra = VeloraExtraColors(VeloraColors.AcentoMedio, VeloraColors.GraficaTenue, VeloraColors.Positivo)
+private val DarkExtra = VeloraExtraColors(VeloraColors.GraficaNoche, VeloraColors.GraficaTenueNoche, VeloraColors.PositivoNoche)
+
+val LocalVeloraColors = staticCompositionLocalOf { LightExtra }
 
 private val Light: ColorScheme = lightColorScheme(
     primary = VeloraColors.Acento,
@@ -77,5 +102,7 @@ private val Dark: ColorScheme = darkColorScheme(
 /** Sin color dinámico (Material You): la identidad de Velora es la misma en cualquier teléfono. */
 @Composable
 fun VeloraTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (darkTheme) Dark else Light, content = content)
+    CompositionLocalProvider(LocalVeloraColors provides if (darkTheme) DarkExtra else LightExtra) {
+        MaterialTheme(colorScheme = if (darkTheme) Dark else Light, content = content)
+    }
 }

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.core.app.ApplicationProvider
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
@@ -25,10 +26,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import mx.velora.android.core.data.DashboardRepository
+import mx.velora.android.core.database.VeloraDatabase
 import mx.velora.android.core.designsystem.VeloraTheme
 import mx.velora.android.core.network.VeloraApi
 import mx.velora.android.core.session.SessionManager
 import mx.velora.android.core.session.SessionState
+import mx.velora.android.core.session.SignOutReason
 import mx.velora.android.core.session.SessionStore
 import mx.velora.android.core.session.StoredSession
 import org.junit.After
@@ -57,6 +61,15 @@ class LoginFlowTest {
         val json = headersOf(HttpHeaders.ContentType, "application/json")
         when {
             request.url.encodedPath == "/api/v1/auth/logout" -> respond("", HttpStatusCode.NoContent)
+            // Inicio pide su resumen en cuanto aparece: una cuenta sin rodadas.
+            request.url.encodedPath == "/api/v1/dashboard/summary" ->
+                respond(
+                    """{"period":"month","timeZone":"America/Mexico_City","previous":null,"monthlyTrend":[],
+                        "latestActivity":null,"current":{"from":"2026-11-01","to":"2026-11-30","activityCount":0,
+                        "distanceMeters":0,"movingTimeSeconds":0,"elevationGainMeters":0}}""",
+                    HttpStatusCode.OK,
+                    json,
+                )
             body.contains("\"insistente\"") ->
                 respond("{}", HttpStatusCode.TooManyRequests, headersOf("Retry-After" to listOf("120"), HttpHeaders.ContentType to listOf("application/json")))
             body.contains("\"correcta\"") ->
@@ -70,12 +83,17 @@ class LoginFlowTest {
     }
 
     private val session = SessionManager(store, scope, apiFor = { VeloraApi.create(it, engine) })
+    private val db = VeloraDatabase.inMemory(ApplicationProvider.getApplicationContext())
 
-    @After fun tearDown() = scope.cancel()
+    @After
+    fun tearDown() {
+        scope.cancel()
+        db.close()
+    }
 
     private fun start(allowCleartext: Boolean = true) {
         runBlocking { session.restore() }
-        compose.setContent { VeloraTheme { VeloraRoot(session, allowCleartext) } }
+        compose.setContent { VeloraTheme { VeloraRoot(session, allowCleartext, DashboardRepository(session, db.dashboard())) } }
     }
 
     private fun field(label: String) = compose.onNode(hasSetTextAction() and hasText(label))
@@ -136,7 +154,7 @@ class LoginFlowTest {
         start()
         signIn("http://10.0.2.2:8090/", "correcta")
 
-        waitForText("Inicio")
+        waitForText("Aún no tienes actividades")
         assertEquals(StoredSession("http://10.0.2.2:8090", "propietario@example.com", "r"), store.session)
 
         val bar = SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
@@ -156,11 +174,11 @@ class LoginFlowTest {
     fun saysWhenTheSessionEnded() {
         store.session = StoredSession("http://10.0.2.2:8090", "propietario@example.com", "revocado")
         start()
-        assertEquals(SessionState.SignedIn("http://10.0.2.2:8090", "propietario@example.com"), session.state.value)
 
-        // La API rechaza el refresh token (401): la sesión termina y el login lo explica.
-        runBlocking { runCatching { session.call { getMe() } } }
+        // Inicio pide su resumen; la API rechaza el refresh token (401): la sesión termina y el login lo explica.
         waitForText("Tu sesión terminó. Vuelve a entrar para continuar.")
+        assertEquals(SessionState.SignedOut(SignOutReason.EXPIRED), session.state.value)
+        assertNull(store.session)
     }
 }
 

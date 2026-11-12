@@ -2,7 +2,7 @@
 
 Aplicación Android nativa de **Velora**, plataforma personal de analítica de ciclismo (ruta y MTB).
 
-> Estado: Fase 6, entrega 2 (inicio de sesión). La especificación está en `../docs/07-android-application.md` del kit.
+> Estado: Fase 6, entrega 3 (Inicio con caché local). La especificación está en `../docs/07-android-application.md` del kit.
 
 ## Stack
 
@@ -19,9 +19,11 @@ Aplicación Android nativa de **Velora**, plataforma personal de analítica de c
 | `app` | Actividad, navegación y pantallas |
 | `core:designsystem` | `VeloraTheme` y colores (los mismos tokens que la web) |
 | `core:network` | Cliente generado (`mx.velora.android.api`) y `VeloraApi`, que lo configura para un servidor |
+| `core:database` | Caché local con Room; el esquema exportado está en `core/database/schemas` (ADR-023) |
+| `core:data` | Repositorios: combinan la API (fuente de verdad) con la caché |
 | `core:session` | Login, renovación de tokens y cierre de sesión; el refresh token, cifrado con el Keystore (ADR-022) |
 
-Las siguientes entregas agregan `core:database` (Room), `core:model` y los módulos `feature:*`.
+Las pantallas viven en `app` por paquete (`home`, `login`, `settings`); se separarán en módulos `feature:*` cuando crezcan.
 
 ## Contrato
 
