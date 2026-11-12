@@ -14,6 +14,8 @@ import kotlinx.coroutines.withContext
 import mx.velora.android.api.models.ActivityClimbs
 import mx.velora.android.api.models.ActivityDetail
 import mx.velora.android.api.models.ActivityLap
+import mx.velora.android.api.models.ActivitySubType
+import mx.velora.android.api.models.ActivityTrack
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.Remote
 
@@ -29,8 +31,24 @@ sealed interface Section<out T> {
     data object Failed : Section<Nothing>
 }
 
+/** El recorrido para el mapa. */
+sealed interface MapSection {
+    data object Loading : MapSection
+
+    data class Ready(val track: ActivityTrack) : MapSection
+
+    /** Sin recorrido (rodillo, sin GPS). */
+    data object None : MapSection
+
+    /** La privacidad de inicio y fin oculta todo el recorrido. */
+    data object Hidden : MapSection
+
+    data object Failed : MapSection
+}
+
 data class DetailState(
     val detail: Remote<ActivityDetail>? = null,
+    val map: MapSection = MapSection.Loading,
     val charts: Section<PreparedSeries> = Section.Loading,
     val laps: Section<List<ActivityLap>> = Section.Loading,
     val climbs: Section<ActivityClimbs> = Section.Loading,
@@ -51,6 +69,17 @@ class ActivityDetailViewModel(private val repository: ActivityDetailRepository, 
             val detail = repository.detail(id)
             _state.update { it.copy(detail = detail) }
             val activity = (detail as? Remote.Ok)?.value ?: return@launch
+            val map = async {
+                if (!activity.hasTrack || activity.subType == ActivitySubType.INDOOR) {
+                    MapSection.None
+                } else {
+                    when (val result = repository.track(id)) {
+                        is Remote.Ok -> MapSection.Ready(result.value)
+                        Remote.NotFound -> MapSection.Hidden
+                        is Remote.Failed -> MapSection.Failed
+                    }
+                }
+            }
             val charts = async {
                 when (val result = repository.streams(id)) {
                     // Preparar 14 000 muestras por serie es trabajo de CPU: fuera del hilo principal.
@@ -78,6 +107,7 @@ class ActivityDetailViewModel(private val repository: ActivityDetailRepository, 
                     else -> Section.Failed
                 }
             }
+            _state.update { it.copy(map = map.await()) }
             _state.update { it.copy(charts = charts.await()) }
             _state.update { it.copy(laps = laps.await(), climbs = climbs.await()) }
         }

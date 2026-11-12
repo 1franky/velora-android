@@ -134,6 +134,11 @@
     <!-- %1$s: fecha con día de la semana; %2$s: hora de inicio (24 h). -->
     <string name="detail_started">%1$s, %2$s</string>
 
+    <string name="map_of">Mapa de «%s»</string>
+    <string name="map_trimmed">El inicio y el fin de este recorrido están ocultos por tu privacidad (Configuración).</string>
+    <string name="map_hidden">Tu privacidad de inicio y fin oculta todo este recorrido: es más corto que la distancia que ocultas.</string>
+    <string name="map_unavailable">No pudimos cargar el recorrido.</string>
+
     <string name="charts_title">Gráficas</string>
     <string name="charts_axis">Eje horizontal</string>
     <string name="charts_axis_distance">Distancia</string>

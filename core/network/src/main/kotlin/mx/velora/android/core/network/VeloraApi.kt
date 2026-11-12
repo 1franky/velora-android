@@ -4,6 +4,7 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import mx.velora.android.api.apis.DefaultApi
@@ -21,6 +22,8 @@ object VeloraApi {
         serializersModule = ContractSerializers.module
     }
 
+    private val GEO_JSON = ContentType("application", "geo+json")
+
     /** `https://servidor` → `https://servidor/api/v1`, sin importar si traía diagonal final. */
     fun baseUrl(serverUrl: String): String = serverUrl.trim().trimEnd('/') + "/api/v1"
 
@@ -29,7 +32,11 @@ object VeloraApi {
             baseUrl = baseUrl(serverUrl),
             httpClientEngine = engine,
             httpClientConfig = {
-                it.install(ContentNegotiation) { json(json) }
+                it.install(ContentNegotiation) {
+                    json(json)
+                    // El recorrido llega como GeoJSON (`application/geo+json`).
+                    json(json, GEO_JSON)
+                }
                 it.install(HttpTimeout) {
                     connectTimeoutMillis = 10_000
                     // Subir un archivo grande por datos móviles puede tardar.

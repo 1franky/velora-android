@@ -41,6 +41,7 @@ import mx.velora.android.VeloraIcons
 import mx.velora.android.api.models.ActivityClimbs
 import mx.velora.android.api.models.ActivityDetail
 import mx.velora.android.api.models.ActivityLap
+import mx.velora.android.api.models.ActivityTrack
 import mx.velora.android.api.models.MetricSource
 import mx.velora.android.core.data.RefreshResult
 import mx.velora.android.core.data.Remote
@@ -49,9 +50,17 @@ import mx.velora.android.home.OutlinedPanel
 import mx.velora.android.home.label
 import mx.velora.android.ui.Formats
 
-/** Detalle de una rodada: métricas, gráficas, vueltas y subidas. El mapa llega en la siguiente entrega. */
+/**
+ * Detalle de una rodada: mapa, métricas, gráficas, vueltas y subidas. El mapa llega como parámetro: MapLibre es nativo
+ * y no corre en las pruebas de JVM.
+ */
 @Composable
-fun ActivityDetailScreen(viewModel: ActivityDetailViewModel, @StringRes backLabel: Int, onBack: () -> Unit) {
+fun ActivityDetailScreen(
+    viewModel: ActivityDetailViewModel,
+    @StringRes backLabel: Int,
+    onBack: () -> Unit,
+    map: @Composable (title: String, track: ActivityTrack) -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 12.dp),
@@ -70,6 +79,7 @@ fun ActivityDetailScreen(viewModel: ActivityDetailViewModel, @StringRes backLabe
             )
             is Remote.Ok -> {
                 Header(detail.value)
+                MapView(state.map, detail.value.title, map)
                 Metrics(detail.value)
                 SectionView(state.charts, R.string.charts_unavailable) { ActivityCharts(it) }
                 SectionView(state.laps, R.string.laps_unavailable) { Laps(it) }
@@ -77,6 +87,22 @@ fun ActivityDetailScreen(viewModel: ActivityDetailViewModel, @StringRes backLabe
                 Source(detail.value)
             }
         }
+    }
+}
+
+@Composable
+private fun MapView(section: MapSection, title: String, map: @Composable (String, ActivityTrack) -> Unit) {
+    when (section) {
+        MapSection.Loading -> Loading(null)
+        is MapSection.Ready -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            map(title, section.track)
+            if (section.track.properties.trimmed) {
+                Text(stringResource(R.string.map_trimmed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        MapSection.Hidden -> Text(stringResource(R.string.map_hidden), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        MapSection.Failed -> Text(stringResource(R.string.map_unavailable), color = MaterialTheme.colorScheme.error)
+        MapSection.None -> Unit
     }
 }
 

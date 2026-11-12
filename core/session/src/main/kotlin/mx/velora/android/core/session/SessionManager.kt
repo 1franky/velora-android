@@ -140,6 +140,15 @@ class SessionManager(
         return api.request()
     }
 
+    /**
+     * Access token vigente, renovándolo si hace falta. Para clientes HTTP que no son el generado (el mapa base,
+     * ADR-024). Lanza [SessionExpiredException] sin sesión o [IOException] sin red.
+     */
+    suspend fun accessToken(): String = validAccessToken()
+
+    /** Renueva el access token si [stale] sigue siendo el vigente (otra llamada pudo haberlo hecho ya). */
+    suspend fun renewAccessToken(stale: String): String = refresh(stale)
+
     /** Cierra la sesión en el teléfono de inmediato y avisa a la API cuando pueda (sin red, el token caduca solo). */
     suspend fun logout() {
         val (api, token) = mutex.withLock {
