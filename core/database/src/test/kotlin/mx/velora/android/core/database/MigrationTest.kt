@@ -34,4 +34,22 @@ class MigrationTest {
             assertEquals(0, it.getInt(0))
         }
     }
+
+    @Test
+    fun from2To3AddsTheImportQueue() {
+        helper.createDatabase("migracion-3.db", 2).use {
+            it.execSQL("INSERT INTO resumenes (period, json, fetchedAtEpochMs) VALUES ('week', '{}', 9)")
+        }
+
+        val db = helper.runMigrationsAndValidate("migracion-3.db", 3, true)
+
+        db.query("SELECT COUNT(*) FROM importaciones").use {
+            it.moveToFirst()
+            assertEquals(0, it.getInt(0))
+        }
+        db.query("SELECT fetchedAtEpochMs FROM resumenes").use {
+            it.moveToFirst()
+            assertEquals(9L, it.getLong(0))
+        }
+    }
 }

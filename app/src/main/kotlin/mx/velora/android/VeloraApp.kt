@@ -13,9 +13,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import android.net.Uri
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -39,6 +42,10 @@ import mx.velora.android.activities.ActivitiesViewModel
 import mx.velora.android.core.data.ActivitiesRepository
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
+import mx.velora.android.core.data.ImportsRepository
+import mx.velora.android.imports.ImportIntake
+import mx.velora.android.imports.ImportScreen
+import mx.velora.android.imports.ImportViewModel
 import mx.velora.android.detail.ActivityDetailScreen
 import mx.velora.android.detail.ActivityDetailViewModel
 import mx.velora.android.core.session.SessionManager
@@ -59,6 +66,9 @@ import mx.velora.android.settings.SettingsScreen
 
 @Serializable data object Settings
 
+/** Importar archivos (elegidos o compartidos desde otra app). */
+@Serializable data object ImportRoute
+
 /** Detalle de una rodada; [fromHome] decide a dónde dice que regresa ("Volver a Inicio" o "a actividades"). */
 @Serializable data class ActivityDetailRoute(val id: String, val fromHome: Boolean = false)
 
@@ -78,6 +88,10 @@ fun VeloraRoot(
     dashboard: DashboardRepository,
     activities: ActivitiesRepository,
     details: ActivityDetailRepository,
+    imports: ImportsRepository,
+    /** Archivos compartidos desde otra app, pendientes de entrar a la cola. */
+    shared: List<Uri> = emptyList(),
+    onSharedHandled: () -> Unit = {},
 ) {
     val state by session.state.collectAsStateWithLifecycle()
     when (val current = state) {
@@ -92,8 +106,19 @@ fun VeloraRoot(
             VeloraApp(
                 current,
                 onLogout = { scope.launch { session.logout() } },
-                home = { onOpen -> HomeScreen(viewModel { HomeViewModel(dashboard) }, onOpen) },
-                activities = { onOpen -> ActivitiesScreen(viewModel { ActivitiesViewModel(activities) }, onOpen) },
+                home = { onOpen, onImport -> HomeScreen(viewModel { HomeViewModel(dashboard) }, onOpen, onImport) },
+                activities = { onOpen, onImport -> ActivitiesScreen(viewModel { ActivitiesViewModel(activities) }, onOpen, onImport) },
+                import = { onBack, onOpen ->
+                    val context = LocalContext.current.applicationContext
+                    ImportScreen(
+                        viewModel { ImportViewModel(imports, activities, ImportIntake(context, imports)::add) },
+                        onBack = onBack,
+                        onOpenActivity = onOpen,
+                        shared = shared,
+                        onSharedHandled = onSharedHandled,
+                    )
+                },
+                openImport = shared.isNotEmpty(),
                 detail = { id, fromHome, onBack ->
                     val mapUrl = stringResource(R.string.map_url)
                     ActivityDetailScreen(
@@ -113,11 +138,17 @@ fun VeloraRoot(
 fun VeloraApp(
     account: SessionState.SignedIn,
     onLogout: () -> Unit,
-    home: @Composable (onOpenActivity: (String) -> Unit) -> Unit,
-    activities: @Composable (onOpenActivity: (String) -> Unit) -> Unit,
+    home: @Composable (onOpenActivity: (String) -> Unit, onImport: () -> Unit) -> Unit,
+    activities: @Composable (onOpenActivity: (String) -> Unit, onImport: () -> Unit) -> Unit,
     detail: @Composable (id: String, fromHome: Boolean, onBack: () -> Unit) -> Unit,
+    import: @Composable (onBack: () -> Unit, onOpenActivity: (String) -> Unit) -> Unit = { _, _ -> },
+    /** Llegaron archivos compartidos: se abre la importación. */
+    openImport: Boolean = false,
 ) {
     val navController = rememberNavController()
+    LaunchedEffect(openImport) {
+        if (openImport) navController.navigate(ImportRoute) { launchSingleTop = true }
+    }
     val entry by navController.currentBackStackEntryAsState()
     val navLabel = stringResource(R.string.nav_label)
     Scaffold(
@@ -126,9 +157,12 @@ fun VeloraApp(
                 Section.entries.forEach { section ->
                     val destination = entry?.destination
                     // El detalle pertenece a la sección desde la que se abrió.
-                    val detailOf = entry?.takeIf { destination?.hasRoute(ActivityDetailRoute::class) == true }
-                        ?.toRoute<ActivityDetailRoute>()
-                        ?.let { if (it.fromHome) Section.HOME else Section.ACTIVITIES }
+                    val detailOf = when {
+                        destination?.hasRoute(ActivityDetailRoute::class) == true ->
+                            entry?.toRoute<ActivityDetailRoute>()?.let { if (it.fromHome) Section.HOME else Section.ACTIVITIES }
+                        destination?.hasRoute(ImportRoute::class) == true -> Section.ACTIVITIES
+                        else -> null
+                    }
                     val selected = destination?.hasRoute(section.route::class) == true || detailOf == section
                     NavigationBarItem(
                         selected = selected,
@@ -147,8 +181,15 @@ fun VeloraApp(
         },
     ) { padding ->
         NavHost(navController, startDestination = Home, modifier = Modifier.padding(padding)) {
-            composable<Home> { home { id -> navController.navigate(ActivityDetailRoute(id, fromHome = true)) } }
-            composable<Activities> { activities { id -> navController.navigate(ActivityDetailRoute(id)) } }
+            composable<Home> {
+                home({ id -> navController.navigate(ActivityDetailRoute(id, fromHome = true)) }, { navController.navigate(ImportRoute) })
+            }
+            composable<Activities> {
+                activities({ id -> navController.navigate(ActivityDetailRoute(id)) }, { navController.navigate(ImportRoute) })
+            }
+            composable<ImportRoute> {
+                import({ navController.popBackStack() }, { id -> navController.navigate(ActivityDetailRoute(id)) })
+            }
             composable<ActivityDetailRoute> { backStackEntry ->
                 val route = backStackEntry.toRoute<ActivityDetailRoute>()
                 detail(route.id, route.fromHome) { navController.popBackStack() }

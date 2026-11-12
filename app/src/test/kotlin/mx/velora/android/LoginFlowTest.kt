@@ -29,6 +29,7 @@ import kotlinx.coroutines.runBlocking
 import mx.velora.android.core.data.ActivitiesRepository
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
+import mx.velora.android.core.data.ImportsRepository
 import mx.velora.android.core.database.VeloraDatabase
 import mx.velora.android.core.designsystem.VeloraTheme
 import mx.velora.android.core.network.VeloraApi
@@ -95,7 +96,7 @@ class LoginFlowTest {
 
     private fun start(allowCleartext: Boolean = true) {
         runBlocking { session.restore() }
-        compose.setContent { VeloraTheme { VeloraRoot(session, allowCleartext, DashboardRepository(session, db.dashboard()), ActivitiesRepository(session, db.activities()), ActivityDetailRepository(session)) } }
+        compose.setContent { VeloraTheme { VeloraRoot(session, allowCleartext, DashboardRepository(session, db.dashboard()), ActivitiesRepository(session, db.activities()), ActivityDetailRepository(session), ImportsRepository(session, db.imports())) } }
     }
 
     private fun field(label: String) = compose.onNode(hasSetTextAction() and hasText(label))

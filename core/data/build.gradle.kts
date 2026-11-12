@@ -18,7 +18,11 @@ android {
     testOptions { unitTests.isIncludeAndroidResources = true }
 }
 
-kotlin { jvmToolchain(17) }
+kotlin {
+    jvmToolchain(17)
+    // La subida multipart del cliente generado usa una API que Ktor marca como interna.
+    compilerOptions.optIn.add("io.ktor.utils.io.InternalAPI")
+}
 
 /** Repositorios: combinan la API (fuente de verdad) con la caché de Room. */
 dependencies {

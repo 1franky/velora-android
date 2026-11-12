@@ -84,17 +84,56 @@ interface ActivityDao {
     suspend fun upsert(activities: List<ActivityEntity>)
 }
 
+/**
+ * Un archivo por importar. Mientras espera su subida, [localPath] apunta a la copia privada de la app (el permiso
+ * sobre un archivo compartido caduca); se borra en cuanto la API lo acepta.
+ */
+@Entity(tableName = "importaciones", indices = [Index(value = ["createdAtEpochMs"])])
+data class ImportEntity(
+    @PrimaryKey val id: String,
+    val fileName: String,
+    val sizeBytes: Long,
+    val localPath: String?,
+    val bikeId: String?,
+    /** Ver `ImportState` en core:data. */
+    val state: String,
+    val jobId: String? = null,
+    val activityId: String? = null,
+    val errorCode: String? = null,
+    /** Correcciones aplicadas por la API, como `CODIGO:cantidad` separados por coma. */
+    val warnings: String? = null,
+    val possibleDuplicates: Int = 0,
+    val createdAtEpochMs: Long,
+)
+
+@Dao
+interface ImportDao {
+    @Query("SELECT * FROM importaciones ORDER BY createdAtEpochMs, id")
+    fun observeAll(): Flow<List<ImportEntity>>
+
+    @Query("SELECT * FROM importaciones WHERE state IN (:states) ORDER BY createdAtEpochMs, id")
+    suspend fun withStates(states: List<String>): List<ImportEntity>
+
+    @Upsert
+    suspend fun upsert(entity: ImportEntity)
+
+    @Query("DELETE FROM importaciones WHERE state IN (:states)")
+    suspend fun deleteWithStates(states: List<String>)
+}
+
 /** Caché local. Se borra completa al cerrar sesión: en el teléfono no quedan datos de una cuenta sin sesión. */
 @Database(
-    entities = [DashboardCacheEntity::class, ActivityEntity::class],
-    version = 2,
+    entities = [DashboardCacheEntity::class, ActivityEntity::class, ImportEntity::class],
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class VeloraDatabase : RoomDatabase() {
     abstract fun dashboard(): DashboardDao
 
     abstract fun activities(): ActivityDao
+
+    abstract fun imports(): ImportDao
 
     companion object {
         fun create(context: Context): VeloraDatabase =

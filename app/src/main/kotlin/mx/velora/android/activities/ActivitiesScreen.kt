@@ -44,7 +44,7 @@ import mx.velora.android.ui.Formats
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActivitiesScreen(viewModel: ActivitiesViewModel, onOpen: (String) -> Unit) {
+fun ActivitiesScreen(viewModel: ActivitiesViewModel, onOpen: (String) -> Unit, onImport: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val bikes by viewModel.bikes.collectAsStateWithLifecycle()
     var showFilters by rememberSaveable { mutableStateOf(false) }
@@ -59,8 +59,8 @@ fun ActivitiesScreen(viewModel: ActivitiesViewModel, onOpen: (String) -> Unit) {
             modifier = Modifier.fillMaxSize().semantics { contentDescription = listLabel },
             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp),
         ) {
-            item(key = "cabecera") { Header(state.filters, onFilters = { showFilters = true; viewModel.loadBikes() }) }
-            item(key = "estado") { Status(state, onRetry = viewModel::refresh, onClear = { viewModel.apply(ActivityFilters()) }) }
+            item(key = "cabecera") { Header(state.filters, onFilters = { showFilters = true; viewModel.loadBikes() }, onImport = onImport) }
+            item(key = "estado") { Status(state, onRetry = viewModel::refresh, onClear = { viewModel.apply(ActivityFilters()) }, onImport = onImport) }
             items(state.items, key = { it.id.toString() }) { activity ->
                 ActivityRow(activity, onOpen = { onOpen(activity.id.toString()) })
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline)
@@ -83,17 +83,18 @@ fun ActivitiesScreen(viewModel: ActivitiesViewModel, onOpen: (String) -> Unit) {
 }
 
 @Composable
-private fun Header(filters: ActivityFilters, onFilters: () -> Unit) {
+private fun Header(filters: ActivityFilters, onFilters: () -> Unit, onImport: () -> Unit) {
+    Text(
+        stringResource(R.string.nav_activities),
+        style = MaterialTheme.typography.headlineLarge,
+        modifier = Modifier.semantics { heading() },
+    )
     Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            stringResource(R.string.nav_activities),
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() },
-        )
+        Button(onClick = onImport) { Text(stringResource(R.string.imports_open)) }
         OutlinedButton(onClick = onFilters) {
             Text(
                 if (filters.isEmpty) {
@@ -107,7 +108,7 @@ private fun Header(filters: ActivityFilters, onFilters: () -> Unit) {
 }
 
 @Composable
-private fun Status(state: ActivitiesState, onRetry: () -> Unit, onClear: () -> Unit) {
+private fun Status(state: ActivitiesState, onRetry: () -> Unit, onClear: () -> Unit, onImport: () -> Unit) {
     val filtered = !state.filters.isEmpty
     Column(modifier = Modifier.padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {
@@ -120,7 +121,10 @@ private fun Status(state: ActivitiesState, onRetry: () -> Unit, onClear: () -> U
                 Empty(R.string.activities_no_matches_title, R.string.activities_no_matches_body)
                 OutlinedButton(onClick = onClear) { Text(stringResource(R.string.activities_filter_clear)) }
             }
-            state.items.isEmpty() -> Empty(R.string.activities_empty_title, R.string.activities_empty_body)
+            state.items.isEmpty() -> {
+                Empty(R.string.activities_empty_title, R.string.activities_empty_body)
+                Button(onClick = onImport) { Text(stringResource(R.string.imports_first)) }
+            }
             else -> Text(
                 pluralStringResource(R.plurals.activities_count, state.items.size, Formats.count(state.items.size)),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
