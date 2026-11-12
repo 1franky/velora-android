@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="login_server_hint">Desde el emulador, http://10.0.2.2:8090; desde el teléfono, la IP de tu computadora.</string>
+    <string name="login_server_hint">Para la API de tu computadora: http://10.0.2.2:8090 desde el emulador o su IP desde el teléfono.</string>
 </resources>

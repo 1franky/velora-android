@@ -16,7 +16,7 @@
     <string name="login_title">Iniciar sesión</string>
     <string name="login_subtitle">Entra a tu historial de rodadas.</string>
     <string name="login_server">Servidor de Velora</string>
-    <string name="login_server_hint">La dirección donde corre tu Velora, por ejemplo https://velora.tu-dominio.mx.</string>
+    <string name="login_server_hint">Cámbialo solo si tu Velora corre en otra dirección.</string>
     <string name="login_email">Correo electrónico</string>
     <string name="login_password">Contraseña</string>
     <string name="login_show_password">Mostrar</string>

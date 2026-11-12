@@ -62,7 +62,8 @@ fun VeloraRoot(session: SessionManager, allowCleartext: Boolean) {
     when (val current = state) {
         SessionState.Restoring -> Surface(modifier = Modifier.fillMaxSize()) {}
         is SessionState.SignedOut -> {
-            val viewModel = viewModel { LoginViewModel(session, allowCleartext) }
+            val defaultServer = stringResource(R.string.default_server_url)
+            val viewModel = viewModel { LoginViewModel(session, allowCleartext, defaultServer) }
             LoginScreen(viewModel, sessionExpired = current.reason == SignOutReason.EXPIRED)
         }
         is SessionState.SignedIn -> {

@@ -2,4 +2,6 @@
 <resources>
     <!-- La versión de desarrollo lo cambia (src/debug): igual que network_security_config. -->
     <bool name="allow_cleartext">false</bool>
+    <!-- Servidor de Velora desplegado (VPS, despliegue automático desde velora-api). Se puede cambiar en el login. -->
+    <string name="default_server_url" translatable="false">https://velora-api.franciscolopez.uk</string>
 </resources>
