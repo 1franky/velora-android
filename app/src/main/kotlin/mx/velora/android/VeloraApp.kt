@@ -47,6 +47,7 @@ import mx.velora.android.home.HomeViewModel
 import mx.velora.android.core.session.SessionState
 import mx.velora.android.core.session.SignOutReason
 import mx.velora.android.login.LoginScreen
+import mx.velora.android.map.ActivityMap
 import mx.velora.android.login.LoginViewModel
 import mx.velora.android.settings.SettingsScreen
 
@@ -94,10 +95,12 @@ fun VeloraRoot(
                 home = { onOpen -> HomeScreen(viewModel { HomeViewModel(dashboard) }, onOpen) },
                 activities = { onOpen -> ActivitiesScreen(viewModel { ActivitiesViewModel(activities) }, onOpen) },
                 detail = { id, fromHome, onBack ->
+                    val mapUrl = stringResource(R.string.map_url)
                     ActivityDetailScreen(
                         viewModel { ActivityDetailViewModel(details, UUID.fromString(id)) },
                         backLabel = if (fromHome) R.string.detail_back_home else R.string.detail_back,
                         onBack = onBack,
+                        map = { title, track -> ActivityMap(title, track, session, mapUrl) },
                     )
                 },
             )

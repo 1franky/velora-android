@@ -7,6 +7,7 @@ import mx.velora.android.api.models.ActivityClimbs
 import mx.velora.android.api.models.ActivityDetail
 import mx.velora.android.api.models.ActivityLap
 import mx.velora.android.api.models.ActivityStreams
+import mx.velora.android.api.models.ActivityTrack
 import mx.velora.android.api.models.StreamType
 import mx.velora.android.core.session.SessionManager
 
@@ -36,6 +37,12 @@ class ActivityDetailRepository(private val session: SessionManager) {
 
     suspend fun climbs(id: UUID): Remote<ActivityClimbs> = load { getActivityClimbs(id) }
 
+    /**
+     * Recorrido simplificado para [zoom], ya recortado por la privacidad de inicio y fin (ADR-016). [Remote.NotFound]
+     * aquí significa que la privacidad lo oculta completo (la rodada es más corta que lo que se oculta).
+     */
+    suspend fun track(id: UUID, zoom: Int = TRACK_ZOOM): Remote<ActivityTrack> = load { getActivityTrack(id, zoom) }
+
     private suspend fun <T : Any> load(request: suspend DefaultApi.() -> HttpResponse<T>): Remote<T> {
         var value: Remote<T>? = null
         val outcome = fetch {
@@ -51,6 +58,9 @@ class ActivityDetailRepository(private val session: SessionManager) {
     }
 
     companion object {
+        /** Detalle suficiente para un mapa de ~400 dp con el recorrido completo. */
+        const val TRACK_ZOOM = 14
+
         val CHART_TYPES = listOf(
             StreamType.TIME,
             StreamType.DISTANCE,

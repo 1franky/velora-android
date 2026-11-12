@@ -1,5 +1,6 @@
 package mx.velora.android
 
+import androidx.compose.material3.Text
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -51,6 +52,7 @@ class ActivityDetailScreenTest {
     @Volatile private var detailStatus = HttpStatusCode.OK
     @Volatile private var offline = false
     @Volatile private var lapsFail = false
+    @Volatile private var trackHidden = false
 
     private val engine = MockEngine { request ->
         val json = headersOf(HttpHeaders.ContentType, "application/json")
@@ -63,6 +65,12 @@ class ActivityDetailScreenTest {
             path.endsWith("/laps") ->
                 if (lapsFail) respond("""{"status":500,"title":"x"}""", HttpStatusCode.InternalServerError, json) else respond(LAPS, HttpStatusCode.OK, json)
             path.endsWith("/climbs") -> respond(CLIMBS, HttpStatusCode.OK, json)
+            path.endsWith("/track") ->
+                if (trackHidden) {
+                    respond("""{"status":404,"title":"Oculto"}""", HttpStatusCode.NotFound, json)
+                } else {
+                    respond(TRACK, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/geo+json"))
+                }
             detailStatus != HttpStatusCode.OK -> respond("""{"status":404,"title":"No encontrada"}""", detailStatus, json)
             else -> respond(DETAIL, HttpStatusCode.OK, json)
         }
@@ -92,6 +100,7 @@ class ActivityDetailScreenTest {
                 viewModel { ActivityDetailViewModel(repository, UUID.fromString(id)) },
                 backLabel = R.string.detail_back,
                 onBack = { back = true },
+                map = { title, track -> Text("Mapa de prueba: $title, ${track.properties.returnedPointCount} puntos") },
             )
         }
     }
@@ -106,6 +115,8 @@ class ActivityDetailScreenTest {
         start()
 
         waitForText("Vuelta al Ajusco")
+        waitForText("Mapa de prueba: Vuelta al Ajusco, 3 puntos")
+        compose.onNodeWithText("El inicio y el fin de este recorrido están ocultos por tu privacidad (Configuración).", useUnmergedTree = true).assertExists()
         // Solo las métricas presentes; la de origen calculado lo dice.
         compose.onNodeWithText("60.3 km", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("148 ppm", useUnmergedTree = true).assertExists()
@@ -140,6 +151,14 @@ class ActivityDetailScreenTest {
     }
 
     @Test
+    fun aTrackHiddenByPrivacyIsExplained() {
+        trackHidden = true
+        start()
+        waitForText("Tu privacidad de inicio y fin oculta todo este recorrido: es más corto que la distancia que ocultas.")
+        compose.onNodeWithText("60.3 km", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun aDeletedRideAndNoNetworkAreExplained() {
         detailStatus = HttpStatusCode.NotFound
         start()
@@ -170,6 +189,12 @@ class ActivityDetailScreenTest {
              "metricsProvenance":{"distanceMeters":"DEVICE_REPORTED","elevationGainMeters":"DERIVED"},
              "hasTrack":true,"streamTypes":["TIME","DISTANCE","ALTITUDE","HEART_RATE"],"lapCount":2,
              "originalFile":{"format":"FIT","sizeBytes":123456,"importedAt":"2026-11-10T20:00:00Z"}}"""
+
+        const val TRACK = """
+            {"type":"Feature","bbox":[-99.3,19.2,-99.1,19.4],
+             "geometry":{"type":"MultiLineString","coordinates":[[[-99.3,19.2],[-99.2,19.3],[-99.1,19.4]]]},
+             "properties":{"activityId":"6f1c3c62-5a0e-4a4e-9a51-0b2c8f8d2f10","pointCount":900,"returnedPointCount":3,
+                           "zoom":14,"trimmed":true}}"""
 
         const val STREAMS = """
             {"sampleCount":4,"streams":{"TIME":[0,1000,2000,3000],"DISTANCE":[0,1000,2000,3000],

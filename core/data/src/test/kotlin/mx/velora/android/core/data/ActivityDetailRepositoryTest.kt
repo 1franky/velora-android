@@ -37,7 +37,9 @@ class ActivityDetailRepositoryTest {
         }
         queries += request.url.encodedPath + "?" + request.url.encodedQuery
         val (status, body) = answer()
-        respond(body, status, json)
+        // El recorrido llega como GeoJSON, con su propio tipo de contenido.
+        val type = if (request.url.encodedPath.endsWith("/track")) "application/geo+json" else "application/json"
+        respond(body, status, headersOf(HttpHeaders.ContentType, type))
     }
 
     private val repository = ActivityDetailRepository(
@@ -75,5 +77,23 @@ class ActivityDetailRepositoryTest {
         assertEquals(Remote.Failed(RefreshResult.FAILED), repository.laps(id))
         answer = { throw IOException("sin red") }
         assertEquals(Remote.Failed(RefreshResult.OFFLINE), repository.climbs(id))
+    }
+
+    @Test
+    fun readsTheTrackAsGeoJson() = runTest {
+        answer = {
+            HttpStatusCode.OK to """
+                {"type":"Feature","bbox":[-99.3,19.2,-99.1,19.4],
+                 "geometry":{"type":"MultiLineString","coordinates":[[[-99.3,19.2],[-99.1,19.4]]]},
+                 "properties":{"activityId":"6f1c3c62-5a0e-4a4e-9a51-0b2c8f8d2f10","pointCount":900,
+                               "returnedPointCount":2,"zoom":14,"trimmed":true}}
+            """.trimIndent()
+        }
+
+        val track = (repository.track(id) as Remote.Ok).value
+
+        assertEquals(listOf(-99.3, 19.2, -99.1, 19.4), track.bbox)
+        assertTrue(track.properties.trimmed)
+        assertTrue(queries.single().contains("zoom=14"))
     }
 }

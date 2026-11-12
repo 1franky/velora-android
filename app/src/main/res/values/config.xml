@@ -4,4 +4,6 @@
     <bool name="allow_cleartext">false</bool>
     <!-- Servidor de Velora desplegado (VPS, despliegue automático desde velora-api). Se puede cambiar en el login. -->
     <string name="default_server_url" translatable="false">https://velora-api.franciscolopez.uk</string>
+    <!-- velora-web: sirve el mapa base y su estilo (ADR-024). -->
+    <string name="map_url" translatable="false">https://velora.franciscolopez.uk</string>
 </resources>

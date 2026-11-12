@@ -31,6 +31,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Solo es-MX por ahora: no empaquetar traducciones de las bibliotecas a otros idiomas.
         androidResources.localeFilters += listOf("es-rMX", "es")
+        // MapLibre trae bibliotecas nativas por arquitectura: el APK publicado lleva solo la de los teléfonos de 64 bits
+        // (ARM). La versión de desarrollo agrega x86_64 para emuladores en computadoras Intel.
+        ndk { abiFilters += listOf("arm64-v8a") }
     }
 
     signingConfigs {
@@ -43,6 +46,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            ndk { abiFilters += listOf("x86_64") }
+        }
         release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
@@ -76,6 +82,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    // Mapa del recorrido sobre el mapa base de Velora (ADR-024); OkHttp para mandar el Bearer solo al host del mapa.
+    implementation(libs.maplibre.android)
+    implementation(libs.okhttp)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 
@@ -85,4 +94,5 @@ dependencies {
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.okhttp.mockwebserver)
 }
