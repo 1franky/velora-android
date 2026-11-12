@@ -29,7 +29,7 @@ class VeloraAppTest {
 
     @Test
     fun startsAtHomeAndNavigatesBetweenSections() {
-        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { Text("Contenido de Inicio") }) } }
+        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { Text("Contenido de Inicio") }, activities = {}) } }
 
         compose.onNodeWithText("Contenido de Inicio").assertExists()
 
@@ -41,7 +41,7 @@ class VeloraAppTest {
 
     @Test
     fun theBottomBarMarksTheCurrentSection() {
-        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { Text("Contenido de Inicio") }) } }
+        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { Text("Contenido de Inicio") }, activities = {}) } }
         val bar = SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
 
         compose.onAllNodesWithText("Configuración").filterToOne(bar).assertIsNotSelected()
