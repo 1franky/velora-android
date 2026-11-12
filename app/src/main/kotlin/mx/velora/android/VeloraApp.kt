@@ -30,12 +30,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import java.util.UUID
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import mx.velora.android.activities.ActivitiesScreen
 import mx.velora.android.activities.ActivitiesViewModel
 import mx.velora.android.core.data.ActivitiesRepository
+import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
+import mx.velora.android.detail.ActivityDetailScreen
+import mx.velora.android.detail.ActivityDetailViewModel
 import mx.velora.android.core.session.SessionManager
 import mx.velora.android.home.HomeScreen
 import mx.velora.android.home.HomeViewModel
@@ -53,6 +58,9 @@ import mx.velora.android.settings.SettingsScreen
 
 @Serializable data object Settings
 
+/** Detalle de una rodada; [fromHome] decide a dónde dice que regresa ("Volver a Inicio" o "a actividades"). */
+@Serializable data class ActivityDetailRoute(val id: String, val fromHome: Boolean = false)
+
 /** Secciones de la barra inferior, en el mismo orden que la web. */
 private enum class Section(val route: Any, @StringRes val label: Int, @StringRes val body: Int?, val icon: ImageVector) {
     HOME(Home, R.string.nav_home, null, VeloraIcons.Home),
@@ -68,6 +76,7 @@ fun VeloraRoot(
     allowCleartext: Boolean,
     dashboard: DashboardRepository,
     activities: ActivitiesRepository,
+    details: ActivityDetailRepository,
 ) {
     val state by session.state.collectAsStateWithLifecycle()
     when (val current = state) {
@@ -82,8 +91,15 @@ fun VeloraRoot(
             VeloraApp(
                 current,
                 onLogout = { scope.launch { session.logout() } },
-                home = { HomeScreen(viewModel { HomeViewModel(dashboard) }) },
-                activities = { ActivitiesScreen(viewModel { ActivitiesViewModel(activities) }) },
+                home = { onOpen -> HomeScreen(viewModel { HomeViewModel(dashboard) }, onOpen) },
+                activities = { onOpen -> ActivitiesScreen(viewModel { ActivitiesViewModel(activities) }, onOpen) },
+                detail = { id, fromHome, onBack ->
+                    ActivityDetailScreen(
+                        viewModel { ActivityDetailViewModel(details, UUID.fromString(id)) },
+                        backLabel = if (fromHome) R.string.detail_back_home else R.string.detail_back,
+                        onBack = onBack,
+                    )
+                },
             )
         }
     }
@@ -94,8 +110,9 @@ fun VeloraRoot(
 fun VeloraApp(
     account: SessionState.SignedIn,
     onLogout: () -> Unit,
-    home: @Composable () -> Unit,
-    activities: @Composable () -> Unit,
+    home: @Composable (onOpenActivity: (String) -> Unit) -> Unit,
+    activities: @Composable (onOpenActivity: (String) -> Unit) -> Unit,
+    detail: @Composable (id: String, fromHome: Boolean, onBack: () -> Unit) -> Unit,
 ) {
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
@@ -104,7 +121,12 @@ fun VeloraApp(
         bottomBar = {
             NavigationBar(modifier = Modifier.semantics { paneTitle = navLabel }) {
                 Section.entries.forEach { section ->
-                    val selected = entry?.destination?.hasRoute(section.route::class) == true
+                    val destination = entry?.destination
+                    // El detalle pertenece a la sección desde la que se abrió.
+                    val detailOf = entry?.takeIf { destination?.hasRoute(ActivityDetailRoute::class) == true }
+                        ?.toRoute<ActivityDetailRoute>()
+                        ?.let { if (it.fromHome) Section.HOME else Section.ACTIVITIES }
+                    val selected = destination?.hasRoute(section.route::class) == true || detailOf == section
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
@@ -122,8 +144,12 @@ fun VeloraApp(
         },
     ) { padding ->
         NavHost(navController, startDestination = Home, modifier = Modifier.padding(padding)) {
-            composable<Home> { home() }
-            composable<Activities> { activities() }
+            composable<Home> { home { id -> navController.navigate(ActivityDetailRoute(id, fromHome = true)) } }
+            composable<Activities> { activities { id -> navController.navigate(ActivityDetailRoute(id)) } }
+            composable<ActivityDetailRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<ActivityDetailRoute>()
+                detail(route.id, route.fromHome) { navController.popBackStack() }
+            }
             composable<Performance> { ComingSoon(Section.PERFORMANCE) }
             composable<Settings> { SettingsScreen(account.email, account.serverUrl, onLogout) }
         }

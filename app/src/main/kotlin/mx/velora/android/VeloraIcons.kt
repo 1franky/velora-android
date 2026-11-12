@@ -35,6 +35,7 @@ object VeloraIcons {
     val TrendUp = stroke("Sube", "M22 7 13.5 15.5 8.5 10.5 2 17", "M16 7h6v6")
     val TrendDown = stroke("Baja", "M22 17 13.5 8.5 8.5 13.5 2 7", "M16 17h6v-6")
     val Same = stroke("Igual", "M5 12h14")
+    val Back = stroke("Volver", "m15 18-6-6 6-6")
     val Settings = stroke(
         "Configuración",
         "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",

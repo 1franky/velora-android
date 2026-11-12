@@ -1,5 +1,6 @@
 package mx.velora.android.activities
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -43,7 +44,7 @@ import mx.velora.android.ui.Formats
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActivitiesScreen(viewModel: ActivitiesViewModel) {
+fun ActivitiesScreen(viewModel: ActivitiesViewModel, onOpen: (String) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val bikes by viewModel.bikes.collectAsStateWithLifecycle()
     var showFilters by rememberSaveable { mutableStateOf(false) }
@@ -61,7 +62,7 @@ fun ActivitiesScreen(viewModel: ActivitiesViewModel) {
             item(key = "cabecera") { Header(state.filters, onFilters = { showFilters = true; viewModel.loadBikes() }) }
             item(key = "estado") { Status(state, onRetry = viewModel::refresh, onClear = { viewModel.apply(ActivityFilters()) }) }
             items(state.items, key = { it.id.toString() }) { activity ->
-                ActivityRow(activity)
+                ActivityRow(activity, onOpen = { onOpen(activity.id.toString()) })
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             }
             item(key = "pie") { Footer(state, onMore = viewModel::loadMore) }
@@ -163,9 +164,9 @@ private fun Empty(title: Int, body: Int) {
 }
 
 @Composable
-private fun ActivityRow(activity: ActivitySummary) {
+private fun ActivityRow(activity: ActivitySummary, onOpen: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp).semantics(mergeDescendants = true) {},
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 14.dp).semantics(mergeDescendants = true) {},
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(activity.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
