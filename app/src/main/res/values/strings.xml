@@ -105,6 +105,83 @@
     <string name="activities_offline">Sin conexión con el servidor. Estas son las rodadas guardadas en el teléfono.</string>
     <string name="activities_more_failed">No pudimos cargar más actividades. Intenta de nuevo.</string>
 
+    <!-- Importación (mismos textos que la web) -->
+    <string name="imports_title">Importar archivos</string>
+    <string name="imports_intro">Elige archivos FIT, GPX o TCX de hasta 50 MB, o compártelos a Velora desde otra app. Se suben uno por uno, aunque cierres la app; sin conexión, esperan a que vuelva.</string>
+    <string name="imports_choose">Elegir archivos</string>
+    <string name="imports_queue">Archivos en esta importación</string>
+    <!-- %1$d procesados de %2$d. -->
+    <plurals name="imports_summary">
+        <item quantity="one">%1$d de %2$d archivo procesado</item>
+        <item quantity="many">%1$d de %2$d archivos procesados</item>
+        <item quantity="other">%1$d de %2$d archivos procesados</item>
+    </plurals>
+    <string name="imports_clear">Limpiar lista</string>
+    <string name="imports_empty">Aún no eliges archivos.</string>
+    <string name="imports_bike">Bicicleta de estos archivos</string>
+    <string name="imports_no_bike">Sin bicicleta</string>
+    <string name="imports_bike_hint">Se asigna a los archivos que elijas ahora; puedes cambiarla después en cada rodada.</string>
+    <string name="imports_status_waiting">En espera</string>
+    <string name="imports_status_uploading">Subiendo…</string>
+    <string name="imports_status_queued">En cola</string>
+    <string name="imports_status_processing">Procesando…</string>
+    <string name="imports_status_completed">Importada</string>
+    <string name="imports_status_duplicate">Ya la tenías</string>
+    <string name="imports_status_rejected">Rechazada</string>
+    <string name="imports_status_failed">Falló</string>
+    <string name="imports_view_activity">Ver actividad</string>
+    <string name="imports_view_existing">Ver la que ya tenías</string>
+    <plurals name="imports_possible_duplicate">
+        <item quantity="one">Se parece a otra actividad que ya tenías; se importó de todos modos.</item>
+        <item quantity="many">Se parece a %d actividades que ya tenías; se importó de todos modos.</item>
+        <item quantity="other">Se parece a %d actividades que ya tenías; se importó de todos modos.</item>
+    </plurals>
+    <plurals name="imports_warning_invalid_coordinates">
+        <item quantity="one">Se descartó %d punto con coordenadas inválidas.</item>
+        <item quantity="many">Se descartaron %d puntos con coordenadas inválidas.</item>
+        <item quantity="other">Se descartaron %d puntos con coordenadas inválidas.</item>
+    </plurals>
+    <plurals name="imports_warning_gps_jumps">
+        <item quantity="one">Se corrigió %d salto de GPS.</item>
+        <item quantity="many">Se corrigieron %d saltos de GPS.</item>
+        <item quantity="other">Se corrigieron %d saltos de GPS.</item>
+    </plurals>
+    <plurals name="imports_warning_altitude_jumps">
+        <item quantity="one">Se corrigió %d salto de altitud.</item>
+        <item quantity="many">Se corrigieron %d saltos de altitud.</item>
+        <item quantity="other">Se corrigieron %d saltos de altitud.</item>
+    </plurals>
+    <plurals name="imports_warning_long_pauses">
+        <item quantity="one">Se detectó %d pausa larga; no cuenta como tiempo en movimiento.</item>
+        <item quantity="many">Se detectaron %d pausas largas; no cuentan como tiempo en movimiento.</item>
+        <item quantity="other">Se detectaron %d pausas largas; no cuentan como tiempo en movimiento.</item>
+    </plurals>
+    <plurals name="imports_warning_negative_values">
+        <item quantity="one">Se descartó %d valor negativo.</item>
+        <item quantity="many">Se descartaron %d valores negativos.</item>
+        <item quantity="other">Se descartaron %d valores negativos.</item>
+    </plurals>
+    <plurals name="imports_warning_non_monotonic_time">
+        <item quantity="one">Se reordenó %d punto con la hora fuera de orden.</item>
+        <item quantity="many">Se reordenaron %d puntos con la hora fuera de orden.</item>
+        <item quantity="other">Se reordenaron %d puntos con la hora fuera de orden.</item>
+    </plurals>
+    <string name="imports_warning_possible_duplicate">Puede ser la misma rodada que otra actividad.</string>
+    <string name="imports_error_empty_file">El archivo está vacío.</string>
+    <string name="imports_error_unsupported_format">No es un archivo FIT, GPX ni TCX.</string>
+    <string name="imports_error_malformed_file">El archivo está dañado o incompleto.</string>
+    <string name="imports_error_forbidden_xml">El archivo contiene construcciones XML no permitidas por seguridad.</string>
+    <string name="imports_error_too_many_points">El archivo tiene demasiados puntos (más de 200 000).</string>
+    <string name="imports_error_invalid_data">El archivo no tiene datos de actividad utilizables.</string>
+    <string name="imports_error_internal">Ocurrió un error al procesarlo. Intenta importarlo de nuevo.</string>
+    <string name="imports_error_too_large">Pesa más de 50 MB.</string>
+    <string name="imports_error_wrong_extension">Solo se aceptan archivos .fit, .gpx o .tcx.</string>
+    <string name="imports_error_invalid">La API rechazó el archivo.</string>
+    <string name="imports_error_unreadable">No pudimos leer el archivo en el teléfono.</string>
+    <string name="imports_error_unknown">No pudimos importar este archivo.</string>
+    <string name="imports_open">Importar archivos</string>
+    <string name="imports_first">Importar tus primeros archivos</string>
+
     <!-- Detalle de una rodada (mismos textos que la web) -->
     <string name="detail_back">Volver a actividades</string>
     <string name="detail_back_home">Volver a Inicio</string>

@@ -86,6 +86,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     // Mapa del recorrido sobre el mapa base de Velora (ADR-024); OkHttp para mandar el Bearer solo al host del mapa.
     implementation(libs.maplibre.android)
+    // Subidas en segundo plano con reintentos (07-android-application.md §4).
+    implementation(libs.androidx.work.runtime)
     implementation(libs.okhttp)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
@@ -97,4 +99,5 @@ dependencies {
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.androidx.work.testing)
 }

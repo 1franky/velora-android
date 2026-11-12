@@ -54,7 +54,7 @@ import mx.velora.android.ui.Formats
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: HomeViewModel, onOpenActivity: (String) -> Unit) {
+fun HomeScreen(viewModel: HomeViewModel, onOpenActivity: (String) -> Unit, onImport: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     PullToRefreshBox(
         isRefreshing = state.refreshing && state.summary != null,
@@ -72,7 +72,7 @@ fun HomeScreen(viewModel: HomeViewModel, onOpenActivity: (String) -> Unit) {
             )
             PeriodSelector(state.period, viewModel::select)
             Status(state)
-            Body(state, onRetry = viewModel::refresh, onOpen = onOpenActivity)
+            Body(state, onRetry = viewModel::refresh, onOpen = onOpenActivity, onImport = onImport)
         }
     }
 }
@@ -112,11 +112,11 @@ private fun Status(state: HomeState) {
 }
 
 @Composable
-private fun Body(state: HomeState, onRetry: () -> Unit, onOpen: (String) -> Unit) {
+private fun Body(state: HomeState, onRetry: () -> Unit, onOpen: (String) -> Unit, onImport: () -> Unit) {
     val cached = state.summary
     when {
         cached != null ->
-            if (cached.value.latestActivity == null) Empty() else Summary(cached.value, state.period, onOpen)
+            if (cached.value.latestActivity == null) Empty(onImport) else Summary(cached.value, state.period, onOpen)
         state.reading || state.lastRefresh == null || state.refreshing -> Loading()
         state.lastRefresh == RefreshResult.SESSION_ENDED -> Unit
         else -> Unavailable(onRetry)
@@ -144,7 +144,7 @@ private fun Unavailable(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun Empty() {
+private fun Empty(onImport: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             stringResource(R.string.home_empty_title),
@@ -152,6 +152,7 @@ private fun Empty() {
             modifier = Modifier.semantics { heading() },
         )
         Text(stringResource(R.string.home_empty_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Button(onClick = onImport, modifier = Modifier.padding(top = 4.dp)) { Text(stringResource(R.string.imports_first)) }
     }
 }
 
