@@ -68,6 +68,8 @@ android {
         // Cambian cada vez que sale una versión nueva: avisan, pero no rompen el CI (las actualizaciones van en PRs).
         // ObsoleteLintCustomCheck: chequeos de bibliotecas AndroidX desfasados respecto a esta versión de Lint.
         disable += setOf("NewerVersionAvailable", "AndroidGradlePluginVersion", "GradleDependency", "ObsoleteLintCustomCheck")
+        // Sin x86 a propósito: MapLibre pesa ~14 MB por arquitectura y Velora es para el teléfono del dueño (ADR-024).
+        disable += "ChromeOsAbiSupport"
     }
 }
 
