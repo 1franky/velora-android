@@ -1,0 +1,25 @@
+# Actualizaciones de dependencias (10-security-and-operations.md §2). Un PR por grupo cada semana; los de seguridad
+# llegan en cuanto se publica el aviso. Cada PR pasa por el CI (compilación, pruebas y lint) antes de integrarse.
+#
+# openapi-generator queda fijo en 7.14.0: versiones más nuevas generan código que no compila (ADR-021).
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "06:00", timezone: America/Mexico_City }
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: org.openapi.generator
+    groups:
+      androidx:
+        patterns: ["androidx.*"]
+        update-types: [minor, patch]
+      gradle-menores:
+        exclude-patterns: ["androidx.*"]
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "06:00", timezone: America/Mexico_City }
+    groups:
+      actions:
+        patterns: ["*"]
