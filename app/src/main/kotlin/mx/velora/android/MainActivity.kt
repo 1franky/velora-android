@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
                     app.details,
                     app.imports,
                     app.synchronizer,
+                    app.performance,
                     shared = shared.value,
                     onSharedHandled = { shared.value = emptyList() },
                 )

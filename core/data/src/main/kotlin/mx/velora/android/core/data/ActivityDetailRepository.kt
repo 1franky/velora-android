@@ -43,19 +43,7 @@ class ActivityDetailRepository(private val session: SessionManager) {
      */
     suspend fun track(id: UUID, zoom: Int = TRACK_ZOOM): Remote<ActivityTrack> = load { getActivityTrack(id, zoom) }
 
-    private suspend fun <T : Any> load(request: suspend DefaultApi.() -> HttpResponse<T>): Remote<T> {
-        var value: Remote<T>? = null
-        val outcome = fetch {
-            val response = session.call(request)
-            when {
-                response.status == 404 -> value = Remote.NotFound
-                !response.success -> return@fetch RefreshResult.FAILED
-                else -> value = Remote.Ok(response.body())
-            }
-            RefreshResult.UPDATED
-        }
-        return value ?: Remote.Failed(outcome)
-    }
+    private suspend fun <T : Any> load(request: suspend DefaultApi.() -> HttpResponse<T>): Remote<T> = remote(session, request)
 
     companion object {
         /** Detalle suficiente para un mapa de ~400 dp con el recorrido completo. */
@@ -72,4 +60,19 @@ class ActivityDetailRepository(private val session: SessionManager) {
             StreamType.TEMPERATURE,
         ).joinToString(",") { it.value }
     }
+}
+
+/** Una lectura de la API que no se guarda: 404 es [Remote.NotFound]; sin red o con error, [Remote.Failed]. */
+internal suspend fun <T : Any> remote(session: SessionManager, request: suspend DefaultApi.() -> HttpResponse<T>): Remote<T> {
+    var value: Remote<T>? = null
+    val outcome = fetch {
+        val response = session.call(request)
+        when {
+            response.status == 404 -> value = Remote.NotFound
+            !response.success -> return@fetch RefreshResult.FAILED
+            else -> value = Remote.Ok(response.body())
+        }
+        RefreshResult.UPDATED
+    }
+    return value ?: Remote.Failed(outcome)
 }

@@ -29,19 +29,17 @@ class VeloraAppTest {
 
     @Test
     fun startsAtHomeAndNavigatesBetweenSections() {
-        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { _, _ -> Text("Contenido de Inicio") }, activities = { _, _ -> }, detail = { _, _, _ -> }) } }
+        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { _, _ -> Text("Contenido de Inicio") }, activities = { _, _ -> }, detail = { _, _, _ -> }, performance = { Text("Contenido de Rendimiento") }) } }
 
         compose.onNodeWithText("Contenido de Inicio").assertExists()
 
         compose.onNodeWithText("Rendimiento").performClick()
-        compose.onNodeWithText("Tu distancia y desnivel por semana y por mes, tus récords y tu número de Eddington.")
-            .assertExists()
-        compose.onAllNodesWithText("Rendimiento").filterToOne(heading).assertExists()
+        compose.onNodeWithText("Contenido de Rendimiento").assertExists()
     }
 
     @Test
     fun theBottomBarMarksTheCurrentSection() {
-        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { _, _ -> Text("Contenido de Inicio") }, activities = { _, _ -> }, detail = { _, _, _ -> }) } }
+        compose.setContent { VeloraTheme { VeloraApp(account, onLogout = {}, home = { _, _ -> Text("Contenido de Inicio") }, activities = { _, _ -> }, detail = { _, _, _ -> }, performance = { Text("Contenido de Rendimiento") }) } }
         val bar = SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
 
         compose.onAllNodesWithText("Configuración").filterToOne(bar).assertIsNotSelected()

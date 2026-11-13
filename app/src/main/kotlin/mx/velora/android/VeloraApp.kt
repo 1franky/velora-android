@@ -43,7 +43,10 @@ import mx.velora.android.core.data.ActivitiesRepository
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
 import mx.velora.android.core.data.ImportsRepository
+import mx.velora.android.core.data.PerformanceRepository
 import mx.velora.android.core.data.Synchronizer
+import mx.velora.android.performance.PerformanceScreen
+import mx.velora.android.performance.PerformanceViewModel
 import mx.velora.android.sync.SyncSection
 import mx.velora.android.sync.SyncViewModel
 import mx.velora.android.imports.ImportIntake
@@ -76,11 +79,11 @@ import mx.velora.android.settings.SettingsScreen
 @Serializable data class ActivityDetailRoute(val id: String, val fromHome: Boolean = false)
 
 /** Secciones de la barra inferior, en el mismo orden que la web. */
-private enum class Section(val route: Any, @StringRes val label: Int, @StringRes val body: Int?, val icon: ImageVector) {
-    HOME(Home, R.string.nav_home, null, VeloraIcons.Home),
-    ACTIVITIES(Activities, R.string.nav_activities, null, VeloraIcons.Activities),
-    PERFORMANCE(Performance, R.string.nav_performance, R.string.performance_body, VeloraIcons.Performance),
-    SETTINGS(Settings, R.string.nav_settings, null, VeloraIcons.Settings),
+private enum class Section(val route: Any, @StringRes val label: Int, val icon: ImageVector) {
+    HOME(Home, R.string.nav_home, VeloraIcons.Home),
+    ACTIVITIES(Activities, R.string.nav_activities, VeloraIcons.Activities),
+    PERFORMANCE(Performance, R.string.nav_performance, VeloraIcons.Performance),
+    SETTINGS(Settings, R.string.nav_settings, VeloraIcons.Settings),
 }
 
 /** Lo que se ve según la sesión: el login sin ella, la app con ella (y nada mientras se lee al abrir). */
@@ -93,6 +96,7 @@ fun VeloraRoot(
     details: ActivityDetailRepository,
     imports: ImportsRepository,
     synchronizer: Synchronizer,
+    performance: PerformanceRepository,
     /** Archivos compartidos desde otra app, pendientes de entrar a la cola. */
     shared: List<Uri> = emptyList(),
     onSharedHandled: () -> Unit = {},
@@ -124,6 +128,7 @@ fun VeloraRoot(
                 },
                 openImport = shared.isNotEmpty(),
                 sync = { SyncSection(viewModel { SyncViewModel(synchronizer) }) },
+                performance = { onOpen -> PerformanceScreen(viewModel { PerformanceViewModel(performance) }, onOpen) },
                 detail = { id, fromHome, onBack ->
                     val mapUrl = stringResource(R.string.map_url)
                     ActivityDetailScreen(
@@ -150,6 +155,7 @@ fun VeloraApp(
     /** Llegaron archivos compartidos: se abre la importación. */
     openImport: Boolean = false,
     sync: @Composable () -> Unit = {},
+    performance: @Composable (onOpenActivity: (String) -> Unit) -> Unit = {},
 ) {
     val navController = rememberNavController()
     LaunchedEffect(openImport) {
@@ -200,25 +206,9 @@ fun VeloraApp(
                 val route = backStackEntry.toRoute<ActivityDetailRoute>()
                 detail(route.id, route.fromHome) { navController.popBackStack() }
             }
-            composable<Performance> { ComingSoon(Section.PERFORMANCE) }
+            composable<Performance> { performance { id -> navController.navigate(ActivityDetailRoute(id)) } }
             composable<Settings> { SettingsScreen(account.email, account.serverUrl, onLogout, sync) }
         }
     }
 }
 
-/** Sección aún no construida: dice qué contendrá, en palabras del usuario (como en la web). */
-@Composable
-private fun ComingSoon(section: Section) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            stringResource(section.label),
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() },
-        )
-        Text(stringResource(R.string.soon), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(checkNotNull(section.body)), color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}

@@ -45,11 +45,16 @@ val generateApi by tasks.registering(GenerateTask::class) {
     // Números como Double (kotlinx.serialization no serializa BigDecimal) y el enum entero de privacidad como Int (el
     // generador lo emite mal: valores Int en un enum de String).
     typeMappings.set(mapOf("number" to "kotlin.Double", "decimal" to "kotlin.Double"))
-    // El rango de pendiente: sus límites nulos se generan como obligatorios (ver GradeBucket).
+    // Esquemas con `additionalProperties: false` y nulos de OpenAPI 3.1 (`[integer, 'null']`, `oneOf: [X, null]`):
+    // el generador 7.14 los vuelve obligatorios y un null de la API rompe la lectura. Se escriben a mano en
+    // ContractModels.kt (probado en DetailModelsTest y AnalyticsModelsTest).
     schemaMappings.set(
         mapOf(
             "TrackPrivacyMeters" to "kotlin.Int",
             "ActivityClimbs_gradeDistribution_inner" to "mx.velora.android.core.network.GradeBucket",
+            "Records" to "mx.velora.android.core.network.Records",
+            "HeartRateZones" to "mx.velora.android.core.network.HeartRateZones",
+            "TrainingLoad" to "mx.velora.android.core.network.TrainingLoad",
         ),
     )
     cleanupOutput.set(true)

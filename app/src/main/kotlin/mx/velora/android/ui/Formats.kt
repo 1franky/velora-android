@@ -72,6 +72,8 @@ object Formats {
     private val calendarDate = DateTimeFormatter.ofPattern("dd/MM/yyyy", LOCALE)
     private val weekdayDate = DateTimeFormatter.ofPattern("EEE, d MMM yyyy", LOCALE)
     private val shortMonth = DateTimeFormatter.ofPattern("MMM", LOCALE)
+    private val dayMonth = DateTimeFormatter.ofPattern("d MMM", LOCALE)
+    private val dayMonthYear = DateTimeFormatter.ofPattern("d MMM yyyy", LOCALE)
     private val longMonth = DateTimeFormatter.ofPattern("MMMM 'de' yyyy", LOCALE)
     private val dateTime = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", LOCALE)
 
@@ -81,6 +83,12 @@ object Formats {
     fun weekdayDate(date: LocalDate?): String = date?.format(weekdayDate)?.replace(".", "") ?: MISSING
 
     fun shortMonth(month: YearMonth): String = month.atDay(1).format(shortMonth).replace(".", "")
+
+    /** "9 nov", sin punto de abreviatura (etiquetas de semanas). */
+    fun dayMonth(date: LocalDate): String = date.format(dayMonth).replace(".", "")
+
+    /** "9 nov 2026". */
+    fun dayMonthYear(date: LocalDate): String = date.format(dayMonthYear).replace(".", "")
 
     fun longMonth(month: YearMonth): String = month.atDay(1).format(longMonth)
 

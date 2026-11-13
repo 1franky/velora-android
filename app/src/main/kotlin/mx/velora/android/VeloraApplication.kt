@@ -10,6 +10,7 @@ import mx.velora.android.core.data.ActivitiesRepository
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
 import mx.velora.android.core.data.ImportsRepository
+import mx.velora.android.core.data.PerformanceRepository
 import mx.velora.android.core.data.Synchronizer
 import mx.velora.android.core.database.VeloraDatabase
 import mx.velora.android.core.session.SessionManager
@@ -43,6 +44,9 @@ class VeloraApplication : Application() {
     lateinit var synchronizer: Synchronizer
         private set
 
+    lateinit var performance: PerformanceRepository
+        private set
+
     val allowCleartext: Boolean get() = resources.getBoolean(R.bool.allow_cleartext)
 
     override fun onCreate() {
@@ -55,6 +59,7 @@ class VeloraApplication : Application() {
         // Al importar algo, el historial guardado se actualiza para que la rodada nueva aparezca sin conexión.
         imports = ImportsRepository(session, database.imports(), onImported = { activities.syncPage(null) })
         synchronizer = Synchronizer(dashboard, activities, database.sync())
+        performance = PerformanceRepository(session)
         appScope.launch {
             session.restore()
             // Sin sesión no quedan datos de la cuenta en el teléfono (ADR-023).
