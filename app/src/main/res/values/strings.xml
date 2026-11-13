@@ -7,8 +7,6 @@
     <string name="nav_activities">Actividades</string>
     <string name="nav_performance">Rendimiento</string>
     <string name="nav_settings">Configuración</string>
-    <string name="soon">En preparación</string>
-    <string name="performance_body">Tu distancia y desnivel por semana y por mes, tus récords y tu número de Eddington.</string>
 
     <!-- Inicio (mismos textos que la web) -->
     <string name="home_periods">Periodo</string>
@@ -107,6 +105,119 @@
     <string name="activities_unavailable">No pudimos cargar tus actividades. Intenta de nuevo en unos momentos.</string>
     <string name="activities_offline">Sin conexión con el servidor. Estas son las rodadas guardadas en el teléfono.</string>
     <string name="activities_more_failed">No pudimos cargar más actividades. Intenta de nuevo.</string>
+
+    <!-- Gráficas de barras -->
+    <string name="chart_previous">Periodo anterior</string>
+    <string name="chart_next">Periodo siguiente</string>
+
+    <!-- Rendimiento (mismos textos que la web) -->
+    <string name="performance_intro">Cuánto ruedas con el tiempo: distancia, tiempo y desnivel por semana, mes o año.</string>
+    <string name="performance_grouping">Agrupar por</string>
+    <string name="performance_week">Semana</string>
+    <string name="performance_month">Mes</string>
+    <string name="performance_year">Año</string>
+    <string name="performance_indoor">Incluir rodillo</string>
+    <plurals name="performance_range_week">
+        <item quantity="one">Última semana</item>
+        <item quantity="many">Últimas %d semanas</item>
+        <item quantity="other">Últimas %d semanas</item>
+    </plurals>
+    <plurals name="performance_range_month">
+        <item quantity="one">Último mes</item>
+        <item quantity="many">Últimos %d meses</item>
+        <item quantity="other">Últimos %d meses</item>
+    </plurals>
+    <plurals name="performance_range_year">
+        <item quantity="one">Este año</item>
+        <item quantity="many">Últimos %d años</item>
+        <item quantity="other">Últimos %d años</item>
+    </plurals>
+    <string name="performance_total_distance">Distancia</string>
+    <string name="performance_total_rides">Rodadas</string>
+    <string name="performance_indoor_excluded">Solo rodadas de exterior.</string>
+    <string name="performance_indoor_included">Incluye el rodillo (distancia virtual).</string>
+    <!-- %1$s: "3 medidas por el dispositivo"; %2$s: "2 calculadas por Velora". -->
+    <string name="performance_sources">Distancia: %1$s y %2$s.</string>
+    <plurals name="performance_sources_device">
+        <item quantity="one">%d medida por el dispositivo</item>
+        <item quantity="many">%d medidas por el dispositivo</item>
+        <item quantity="other">%d medidas por el dispositivo</item>
+    </plurals>
+    <plurals name="performance_sources_derived">
+        <item quantity="one">%d calculada por Velora</item>
+        <item quantity="many">%d calculadas por Velora</item>
+        <item quantity="other">%d calculadas por Velora</item>
+    </plurals>
+    <plurals name="performance_duplicates">
+        <item quantity="one">Una rodada parece duplicada y se contó una sola vez.</item>
+        <item quantity="many">%d rodadas parecen duplicadas y se contaron una sola vez.</item>
+        <item quantity="other">%d rodadas parecen duplicadas y se contaron una sola vez.</item>
+    </plurals>
+    <string name="performance_chart_label">Distancia por periodo</string>
+    <!-- %1$s: periodo; %2$s: distancia; %3$s: "3 rodadas"; %4$s: desnivel. -->
+    <string name="performance_readout">%1$s: %2$s en %3$s, %4$s de desnivel positivo</string>
+    <string name="performance_week_of">Semana del %1$s</string>
+    <string name="performance_unavailable">Rendimiento se calcula en el servidor con todo tu historial y necesita conexión. Intenta de nuevo cuando la tengas.</string>
+    <string name="performance_section_failed">No pudimos cargar esta sección.</string>
+
+    <string name="records_title">Récords</string>
+    <string name="records_empty">Aún no hay rodadas que cumplan estas reglas.</string>
+    <string name="records_longest_distance">Rodada más larga</string>
+    <string name="records_most_elevation">Más desnivel positivo</string>
+    <string name="records_longest_moving_time">Más tiempo en movimiento</string>
+    <string name="records_fastest_average_speed">Velocidad media más alta</string>
+    <string name="records_source_device">Dato del dispositivo</string>
+    <string name="records_source_derived">Calculado por Velora</string>
+    <string name="records_biggest_day">Mejor día</string>
+    <plurals name="records_biggest_day_rides">
+        <item quantity="one">%d rodada</item>
+        <item quantity="many">%d rodadas sumadas</item>
+        <item quantity="other">%d rodadas sumadas</item>
+    </plurals>
+    <!-- %1$s: km; %2$s: minutos. -->
+    <string name="records_rules">La velocidad media solo cuenta en rodadas de al menos %1$s km y %2$s min en movimiento. La velocidad máxima no es récord: un pico del GPS la falsea. Récords y Eddington siguen la opción de rodillo, no la agrupación.</string>
+
+    <string name="eddington_title">Número de Eddington</string>
+    <string name="eddington_overall">De siempre</string>
+    <string name="eddington_this_year">En %1$d</string>
+    <!-- %1$d: días que faltan; %2$d: km del siguiente número. -->
+    <plurals name="eddington_next">
+        <item quantity="one">Te falta %1$d día de %2$d km o más para llegar a %2$d.</item>
+        <item quantity="many">Te faltan %1$d días de %2$d km o más para llegar a %2$d.</item>
+        <item quantity="other">Te faltan %1$d días de %2$d km o más para llegar a %2$d.</item>
+    </plurals>
+    <plurals name="eddington_explain">
+        <item quantity="one">Un Eddington de %1$d significa que has rodado al menos %1$d km en %1$d día. Cuenta por día: se suman las rodadas del mismo día.</item>
+        <item quantity="many">Un Eddington de %1$d significa que has rodado al menos %1$d km en %1$d días distintos. Cuenta por día: se suman las rodadas del mismo día.</item>
+        <item quantity="other">Un Eddington de %1$d significa que has rodado al menos %1$d km en %1$d días distintos. Cuenta por día: se suman las rodadas del mismo día.</item>
+    </plurals>
+
+    <string name="hr_title">Zonas de frecuencia cardiaca</string>
+    <string name="hr_no_maximum">Para ver tu tiempo en cada zona necesitamos tu FC máxima. Indícala en Configuración, en la web.</string>
+    <string name="hr_no_data">Ninguna rodada de este periodo tiene frecuencia cardiaca.</string>
+    <string name="hr_zone">Zona %1$d</string>
+    <string name="hr_range">%1$d–%2$d ppm</string>
+    <string name="hr_from">%1$d ppm o más</string>
+    <!-- %1$d: FC máxima; %2$s: tiempo debajo de Z1. -->
+    <string name="hr_explain">Zonas por porcentaje de tu FC máxima (%1$d ppm): Z1 50–60 %%, Z2 60–70 %%, Z3 70–80 %%, Z4 80–90 %% y Z5 90 %% o más. Por debajo de Z1: %2$s.</string>
+    <plurals name="hr_without">
+        <item quantity="one">Una rodada del periodo no tiene FC.</item>
+        <item quantity="many">%d rodadas del periodo no tienen FC.</item>
+        <item quantity="other">%d rodadas del periodo no tienen FC.</item>
+    </plurals>
+    <string name="hr_not_medical">Es una guía de entrenamiento, no una evaluación médica.</string>
+
+    <string name="load_title">Carga de entrenamiento (estimada)</string>
+    <string name="load_chart">Puntos de carga por semana, últimas 12 semanas</string>
+    <!-- %1$s: semana; %2$s: puntos; %3$s: "3 rodadas con FC". -->
+    <string name="load_readout">%1$s: %2$s puntos de %3$s</string>
+    <plurals name="load_rides_with_hr">
+        <item quantity="one">%d rodada con FC</item>
+        <item quantity="many">%d rodadas con FC</item>
+        <item quantity="other">%d rodadas con FC</item>
+    </plurals>
+    <string name="load_no_maximum">La carga se estima con tus zonas cardiacas, y para eso necesitamos tu FC máxima. Indícala en Configuración, en la web.</string>
+    <string name="load_method">Es una estimación: cada minuto en una zona suma el número de esa zona (un minuto en Z1 vale 1; en Z5, 5). Solo cuentan las rodadas con frecuencia cardiaca. Sirve para comparar tus semanas entre sí, no para evaluar tu salud.</string>
 
     <!-- Importación (mismos textos que la web) -->
     <string name="imports_title">Importar archivos</string>

@@ -41,6 +41,7 @@ import mx.velora.android.core.data.ActivitiesRepository
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
 import mx.velora.android.core.data.ImportsRepository
+import mx.velora.android.core.data.PerformanceRepository
 import mx.velora.android.core.data.Synchronizer
 import mx.velora.android.core.database.ActivityEntity
 import mx.velora.android.core.database.DashboardCacheEntity
@@ -56,6 +57,8 @@ import mx.velora.android.detail.ActivityDetailViewModel
 import mx.velora.android.home.HomeScreen
 import mx.velora.android.home.HomeViewModel
 import mx.velora.android.imports.ImportScreen
+import mx.velora.android.performance.PerformanceScreen
+import mx.velora.android.performance.PerformanceViewModel
 import mx.velora.android.imports.ImportViewModel
 import mx.velora.android.settings.SettingsScreen
 import mx.velora.android.sync.SyncSection
@@ -89,6 +92,11 @@ class AccessibilityChecksTest {
             path.endsWith("/climbs") -> respond(CLIMBS, HttpStatusCode.OK, json)
             path.endsWith("/track") -> respond("""{"status":404,"title":"Oculto"}""", HttpStatusCode.NotFound, json)
             path == "/api/v1/activities/$RIDE" -> respond(DETAIL, HttpStatusCode.OK, json)
+            path == "/api/v1/analytics/timeseries" -> respond(TIMESERIES, HttpStatusCode.OK, json)
+            path == "/api/v1/analytics/records" -> respond(RECORDS, HttpStatusCode.OK, json)
+            path == "/api/v1/analytics/eddington" -> respond(EDDINGTON, HttpStatusCode.OK, json)
+            path == "/api/v1/analytics/heart-rate" -> respond(HEART_RATE, HttpStatusCode.OK, json)
+            path == "/api/v1/analytics/training-load" -> respond(LOAD, HttpStatusCode.OK, json)
             else -> throw IOException("sin red")
         }
     }
@@ -129,7 +137,7 @@ class AccessibilityChecksTest {
                 ActivitiesRepository(session, db.activities()),
                 ActivityDetailRepository(session),
                 ImportsRepository(session, db.imports()),
-                Synchronizer(DashboardRepository(session, db.dashboard()), ActivitiesRepository(session, db.activities()), db.sync()),
+                Synchronizer(DashboardRepository(session, db.dashboard()), ActivitiesRepository(session, db.activities()), db.sync()), PerformanceRepository(session)
             )
         }
     }
@@ -224,6 +232,17 @@ class AccessibilityChecksTest {
 
     @Test fun settingsDark() = settings(dark = true)
 
+    private fun performance(dark: Boolean) {
+        val repository = PerformanceRepository(session(signedIn = true))
+        check(dark, "Carga de entrenamiento") {
+            PerformanceScreen(viewModel { PerformanceViewModel(repository) }, onOpenActivity = {})
+        }
+    }
+
+    @Test fun performance() = performance(dark = false)
+
+    @Test fun performanceDark() = performance(dark = true)
+
     /** Control: si esto no falla, las revisiones no están corriendo y el resto no demuestra nada. */
     @Test
     fun theChecksCatchAnInaccessibleScreen() {
@@ -252,6 +271,35 @@ class AccessibilityChecksTest {
              "monthlyTrend":[${(0L..11L).joinToString(",") { """{"month":"${java.time.YearMonth.of(2025, 12).plusMonths(it)}","activityCount":${it % 3},"distanceMeters":${it * 10_000},"movingTimeSeconds":0,"elevationGainMeters":0}""" }}],
              "latestActivity":{"id":"$RIDE","title":"Vuelta al Ajusco","startedAt":"2026-11-10T13:05:00Z","localStartDate":"2026-11-10",
                "subType":"ROAD","distanceMeters":60250,"movingTimeSeconds":9000,"elapsedTimeSeconds":9600,"elevationGainMeters":900,"averageSpeedMps":6.69,"bikeId":null}}
+        """.trimIndent()
+
+        val TIMESERIES = """
+            {"granularity":"week","from":"2026-08-24","to":"2026-11-15","includeIndoor":false,"duplicatesExcluded":0,
+             "distanceSources":{"deviceReported":3,"derived":2},
+             "totals":{"activityCount":5,"distanceMeters":200000,"movingTimeSeconds":36000,"elevationGainMeters":3000},
+             "buckets":[${(0L..11L).joinToString(",") { """{"start":"${java.time.LocalDate.of(2026, 8, 24).plusWeeks(it)}","end":"${java.time.LocalDate.of(2026, 8, 30).plusWeeks(it)}","activityCount":1,"distanceMeters":${it * 8000},"movingTimeSeconds":3600,"elevationGainMeters":200}""" }}]}
+        """.trimIndent()
+
+        const val RECORDS = """
+            {"algorithmVersion":"records/1","includeIndoor":false,"minSpeedDistanceMeters":10000,"minSpeedMovingSeconds":1200,
+             "records":[{"kind":"longest_distance","value":120500,"activityId":"6f1c3c62-5a0e-4a4e-9a51-0b2c8f8d2f10",
+                         "title":"Vuelta al Ajusco","localStartDate":"2026-11-10","source":"DEVICE_REPORTED"}],
+             "biggestDay":{"date":"2026-11-10","distanceMeters":130000,"activityCount":2}}"""
+
+        const val EDDINGTON = """
+            {"algorithmVersion":"eddington/1","includeIndoor":false,"year":2026,"daysWithRides":40,
+             "overall":{"number":32,"daysForNext":20,"missingForNext":13},"thisYear":{"number":20,"daysForNext":5,"missingForNext":16}}"""
+
+        const val HEART_RATE = """
+            {"algorithmVersion":"hr-zones/1","from":"2026-08-24","to":"2026-11-15","includeIndoor":false,"maxHeartRateBpm":185,
+             "activitiesWithHeartRate":3,"activitiesWithoutHeartRate":1,"belowZonesSeconds":600,
+             "zones":[{"zone":1,"fromBpm":93,"toBpm":111,"seconds":600},{"zone":2,"fromBpm":112,"toBpm":129,"seconds":1800},
+                      {"zone":3,"fromBpm":130,"toBpm":147,"seconds":2400},{"zone":4,"fromBpm":148,"toBpm":166,"seconds":1200},
+                      {"zone":5,"fromBpm":167,"toBpm":null,"seconds":300}]}"""
+
+        val LOAD = """
+            {"method":"edwards-trimp/1","estimated":true,"maxHeartRateBpm":185,"includeIndoor":false,
+             "weeks":[${(0L..11L).joinToString(",") { """{"start":"${java.time.LocalDate.of(2026, 8, 24).plusWeeks(it)}","end":"${java.time.LocalDate.of(2026, 8, 30).plusWeeks(it)}","load":${it * 20},"activitiesWithHeartRate":1,"activitiesWithoutHeartRate":0}""" }}]}
         """.trimIndent()
 
         const val DETAIL = """
