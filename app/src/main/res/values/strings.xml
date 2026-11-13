@@ -295,4 +295,13 @@
     <string name="settings_server">Servidor</string>
     <string name="settings_logout">Cerrar sesión</string>
     <string name="settings_logout_hint">Para volver a entrar necesitarás tu contraseña.</string>
+    <string name="settings_sync">Sincronización</string>
+    <string name="settings_sync_hint">Velora actualiza tu resumen y tu historial cada 6 horas cuando hay conexión, para que los veas aunque luego no la tengas.</string>
+    <string name="settings_sync_last">Última sincronización: %1$s</string>
+    <string name="settings_sync_never">Aún no se sincroniza este teléfono.</string>
+    <string name="settings_sync_now">Sincronizar ahora</string>
+    <string name="settings_sync_running">Sincronizando…</string>
+    <string name="settings_sync_done">Datos actualizados.</string>
+    <string name="settings_sync_offline">Sin conexión con el servidor. Lo intentaremos de nuevo más tarde.</string>
+    <string name="settings_sync_failed">No pudimos actualizar tus datos. Lo intentaremos de nuevo más tarde.</string>
 </resources>

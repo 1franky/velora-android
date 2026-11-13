@@ -17,9 +17,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import mx.velora.android.R
 
-/** Por ahora, la cuenta: a qué servidor y con qué correo estás conectado, y cerrar sesión. */
+/** La cuenta (servidor, correo, cerrar sesión) y la sincronización, que llega como parámetro. */
 @Composable
-fun SettingsScreen(email: String, serverUrl: String, onLogout: () -> Unit) {
+fun SettingsScreen(email: String, serverUrl: String, onLogout: () -> Unit, sync: @Composable () -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -40,6 +40,7 @@ fun SettingsScreen(email: String, serverUrl: String, onLogout: () -> Unit) {
             Text(stringResource(R.string.settings_logout))
         }
         Text(stringResource(R.string.settings_logout_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        sync()
     }
 }
 

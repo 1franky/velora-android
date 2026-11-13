@@ -121,12 +121,34 @@ interface ImportDao {
     suspend fun deleteWithStates(states: List<String>)
 }
 
+/** Última sincronización (una sola fila): cuándo fue la última que salió bien y qué pasó en el último intento. */
+@Entity(tableName = "sincronizacion")
+data class SyncStateEntity(
+    @PrimaryKey val id: Int = 1,
+    val lastSuccessEpochMs: Long?,
+    val lastAttemptEpochMs: Long,
+    /** UPDATED, OFFLINE, FAILED o SESSION_ENDED (`RefreshResult` en core:data). */
+    val lastResult: String,
+)
+
+@Dao
+interface SyncDao {
+    @Query("SELECT * FROM sincronizacion WHERE id = 1")
+    fun observe(): Flow<SyncStateEntity?>
+
+    @Query("SELECT * FROM sincronizacion WHERE id = 1")
+    suspend fun get(): SyncStateEntity?
+
+    @Upsert
+    suspend fun upsert(entity: SyncStateEntity)
+}
+
 /** Caché local. Se borra completa al cerrar sesión: en el teléfono no quedan datos de una cuenta sin sesión. */
 @Database(
-    entities = [DashboardCacheEntity::class, ActivityEntity::class, ImportEntity::class],
-    version = 3,
+    entities = [DashboardCacheEntity::class, ActivityEntity::class, ImportEntity::class, SyncStateEntity::class],
+    version = 4,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
 )
 abstract class VeloraDatabase : RoomDatabase() {
     abstract fun dashboard(): DashboardDao
@@ -134,6 +156,8 @@ abstract class VeloraDatabase : RoomDatabase() {
     abstract fun activities(): ActivityDao
 
     abstract fun imports(): ImportDao
+
+    abstract fun sync(): SyncDao
 
     companion object {
         fun create(context: Context): VeloraDatabase =

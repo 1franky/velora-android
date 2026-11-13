@@ -52,4 +52,16 @@ class MigrationTest {
             assertEquals(9L, it.getLong(0))
         }
     }
+
+    @Test
+    fun from3To4AddsTheSyncState() {
+        helper.createDatabase("migracion-4.db", 3).close()
+
+        val db = helper.runMigrationsAndValidate("migracion-4.db", 4, true)
+
+        db.query("SELECT COUNT(*) FROM sincronizacion").use {
+            it.moveToFirst()
+            assertEquals(0, it.getInt(0))
+        }
+    }
 }

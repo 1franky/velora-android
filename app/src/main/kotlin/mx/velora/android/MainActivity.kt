@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
                     app.activities,
                     app.details,
                     app.imports,
+                    app.synchronizer,
                     shared = shared.value,
                     onSharedHandled = { shared.value = emptyList() },
                 )

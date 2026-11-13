@@ -43,6 +43,9 @@ import mx.velora.android.core.data.ActivitiesRepository
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
 import mx.velora.android.core.data.ImportsRepository
+import mx.velora.android.core.data.Synchronizer
+import mx.velora.android.sync.SyncSection
+import mx.velora.android.sync.SyncViewModel
 import mx.velora.android.imports.ImportIntake
 import mx.velora.android.imports.ImportScreen
 import mx.velora.android.imports.ImportViewModel
@@ -89,6 +92,7 @@ fun VeloraRoot(
     activities: ActivitiesRepository,
     details: ActivityDetailRepository,
     imports: ImportsRepository,
+    synchronizer: Synchronizer,
     /** Archivos compartidos desde otra app, pendientes de entrar a la cola. */
     shared: List<Uri> = emptyList(),
     onSharedHandled: () -> Unit = {},
@@ -119,6 +123,7 @@ fun VeloraRoot(
                     )
                 },
                 openImport = shared.isNotEmpty(),
+                sync = { SyncSection(viewModel { SyncViewModel(synchronizer) }) },
                 detail = { id, fromHome, onBack ->
                     val mapUrl = stringResource(R.string.map_url)
                     ActivityDetailScreen(
@@ -144,6 +149,7 @@ fun VeloraApp(
     import: @Composable (onBack: () -> Unit, onOpenActivity: (String) -> Unit) -> Unit = { _, _ -> },
     /** Llegaron archivos compartidos: se abre la importación. */
     openImport: Boolean = false,
+    sync: @Composable () -> Unit = {},
 ) {
     val navController = rememberNavController()
     LaunchedEffect(openImport) {
@@ -195,7 +201,7 @@ fun VeloraApp(
                 detail(route.id, route.fromHome) { navController.popBackStack() }
             }
             composable<Performance> { ComingSoon(Section.PERFORMANCE) }
-            composable<Settings> { SettingsScreen(account.email, account.serverUrl, onLogout) }
+            composable<Settings> { SettingsScreen(account.email, account.serverUrl, onLogout, sync) }
         }
     }
 }
