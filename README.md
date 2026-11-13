@@ -2,7 +2,7 @@
 
 Aplicación Android nativa de **Velora**, plataforma personal de analítica de ciclismo (ruta y MTB).
 
-> Estado: Fase 6 completa (inicio de sesión, Inicio, historial, detalle con mapa, importación y sincronización). Última versión publicada: v0.1.0. La especificación está en `../docs/07-android-application.md` del kit.
+> Estado: Fase 6 completa (inicio de sesión, Inicio, historial, detalle con mapa, importación y sincronización). Última versión publicada: v0.2.0. La especificación está en `../docs/07-android-application.md` del kit.
 
 ## Stack
 
@@ -44,6 +44,7 @@ Requiere JDK 21 o posterior y el SDK de Android (`local.properties` con `sdk.dir
 ./gradlew testDebugUnitTest    # pruebas (JVM y Robolectric)
 ./gradlew lintDebug            # lint: las advertencias fallan el build
 ./gradlew :core:session:connectedDebugAndroidTest   # cifrado con el Keystore real (emulador encendido)
+./gradlew :app:connectedDebugAndroidTest            # revisiones de accesibilidad (ATF) de cada pantalla, claro y oscuro
 ```
 
 La app arranca apuntando al servidor desplegado, `https://velora-api.franciscolopez.uk`, y se puede cambiar en el login.

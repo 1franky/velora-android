@@ -1,6 +1,13 @@
 package mx.velora.android
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onAllNodesWithText
@@ -102,8 +109,15 @@ class HomeScreenTest {
         compose.onNodeWithText("1,501 m", useUnmergedTree = true).assertExists()
         // El mes actual se lee de entrada; cada columna lo dice al lector de pantalla.
         compose.onNodeWithText("noviembre de 2026: 120.5 km en 3 rodadas").assertExists()
-        compose.onNodeWithContentDescription("octubre de 2026: 99.6 km en 1 rodada").performScrollTo().performClick()
+        // Tocar la penúltima columna elige octubre.
+        val chart = compose.onNodeWithContentDescription("Distancia por mes, últimos 12 meses").performScrollTo()
+        chart.performTouchInput { click(Offset(width * 10.5f / 12, centerY)) }
         compose.onNodeWithText("octubre de 2026: 99.6 km en 1 rodada").assertExists()
+        // Con lector de pantalla: la acción "Mes siguiente" vuelve a noviembre, y el estado lo anuncia.
+        compose.runOnIdle {
+            chart.fetchSemanticsNode().config[SemanticsActions.CustomActions].first { it.label == "Mes siguiente" }.action()
+        }
+        chart.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "noviembre de 2026: 120.5 km en 3 rodadas"))
         compose.onNodeWithText("Vuelta al Ajusco", useUnmergedTree = true).performScrollTo().assertExists()
         compose.onNodeWithText("Carretera", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Vuelta al Ajusco", useUnmergedTree = true).performClick()
