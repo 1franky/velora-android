@@ -26,8 +26,8 @@ android {
         // Android 12 o posterior (decisión del 11/11/2026).
         minSdk = 31
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Solo es-MX por ahora: no empaquetar traducciones de las bibliotecas a otros idiomas.
         androidResources.localeFilters += listOf("es-rMX", "es")
@@ -100,4 +100,13 @@ dependencies {
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.androidx.work.testing)
+
+    // Revisiones automáticas de accesibilidad (Accessibility Test Framework de Google). Solo en dispositivo o emulador:
+    // Robolectric no construye el árbol de accesibilidad de Compose. `./gradlew :app:connectedDebugAndroidTest`.
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.compose.ui.test.accessibility)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.ktor.client.mock)
 }

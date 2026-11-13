@@ -40,6 +40,9 @@
     <string name="home_change_same">Igual que %1$s</string>
     <string name="home_change_from_zero">Sin rodadas %1$s</string>
     <string name="home_trend_title">Últimos 12 meses</string>
+    <string name="home_trend_label">Distancia por mes, últimos 12 meses</string>
+    <string name="home_trend_previous">Mes anterior</string>
+    <string name="home_trend_next">Mes siguiente</string>
     <!-- %1$s: "noviembre de 2026"; %2$s: distancia; %3$s: "3 rodadas". -->
     <string name="home_trend_readout">%1$s: %2$s en %3$s</string>
     <string name="home_latest_title">Tu rodada más reciente</string>
