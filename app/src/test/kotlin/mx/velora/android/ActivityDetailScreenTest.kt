@@ -53,6 +53,7 @@ class ActivityDetailScreenTest {
     @Volatile private var offline = false
     @Volatile private var lapsFail = false
     @Volatile private var trackHidden = false
+    @Volatile private var detail = DETAIL
 
     private val engine = MockEngine { request ->
         val json = headersOf(HttpHeaders.ContentType, "application/json")
@@ -72,7 +73,7 @@ class ActivityDetailScreenTest {
                     respond(TRACK, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/geo+json"))
                 }
             detailStatus != HttpStatusCode.OK -> respond("""{"status":404,"title":"No encontrada"}""", detailStatus, json)
-            else -> respond(DETAIL, HttpStatusCode.OK, json)
+            else -> respond(detail, HttpStatusCode.OK, json)
         }
     }
 
@@ -138,6 +139,15 @@ class ActivityDetailScreenTest {
         assertTrue(back)
         // Las gráficas nunca piden posiciones.
         assertFalse(requests.any { it.contains("LATITUDE") || it.contains("LONGITUDE") })
+    }
+
+    @Test
+    fun aStravaRideSaysWhereItCameFrom() {
+        detail = DETAIL.replace("\"sourceType\":\"FIT\"", "\"sourceType\":\"STRAVA\"")
+            .replace("\"format\":\"FIT\"", "\"format\":\"STRAVA\"")
+        start()
+        waitForText("Importada de Strava el", substring = true)
+        compose.onNodeWithText("Importada de un archivo", substring = true, useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

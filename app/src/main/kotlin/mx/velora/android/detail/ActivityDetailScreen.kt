@@ -40,6 +40,7 @@ import mx.velora.android.R
 import mx.velora.android.VeloraIcons
 import mx.velora.android.api.models.ActivityClimbs
 import mx.velora.android.api.models.ActivityDetail
+import mx.velora.android.api.models.ActivityDetailOriginalFile
 import mx.velora.android.api.models.ActivityLap
 import mx.velora.android.api.models.ActivityTrack
 import mx.velora.android.api.models.MetricSource
@@ -315,13 +316,14 @@ private fun Climbs(data: ActivityClimbs) {
 @Composable
 private fun Source(activity: ActivityDetail) {
     val file = activity.originalFile
+    val date = Formats.date(file.importedAt.atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDate())
     Text(
-        stringResource(
-            R.string.detail_source,
-            file.format.value,
-            Formats.fileSize(file.sizeBytes.toLong()),
-            Formats.date(file.importedAt.atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDate()),
-        ),
+        // Las rodadas de Strava (ADR-030) no vienen de un archivo: su "original" son los datos de la API.
+        if (file.format == ActivityDetailOriginalFile.Format.STRAVA) {
+            stringResource(R.string.detail_source_strava, date)
+        } else {
+            stringResource(R.string.detail_source, file.format.value, Formats.fileSize(file.sizeBytes.toLong()), date)
+        },
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
