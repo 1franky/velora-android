@@ -1,6 +1,7 @@
 package mx.velora.android
 
 import mx.velora.android.detail.ChartSeriesKey
+import mx.velora.android.detail.LngLat
 import mx.velora.android.detail.nearestIndex
 import mx.velora.android.detail.prepareSeries
 import org.junit.Assert.assertEquals
@@ -43,6 +44,31 @@ class SeriesTest {
         assertTrue(series.values.all { it!! < 2_100 })
         assertEquals(100, prepared.elapsedSeconds!!.size)
         assertNull(prepared.distanceKm)
+    }
+
+    @Test
+    fun positionsSkipHiddenStretchesAndAreNotAveraged() {
+        // Las primeras muestras vienen en null: la API las oculta por la privacidad de inicio y fin.
+        val prepared = prepareSeries(
+            mapOf(
+                "TIME" to listOf(0.0, 1000.0, 2000.0, 3000.0),
+                "ALTITUDE" to listOf(1.0, 2.0, 3.0, 4.0),
+                "LATITUDE" to listOf(null, null, 19.3, 19.4),
+                "LONGITUDE" to listOf(null, null, -99.2, -99.1),
+            ),
+            sampleCount = 4,
+            maxPoints = 2,
+        )
+
+        // Tramo [0, 2) todo oculto → null; tramo [2, 4) → la muestra con dato más cercana al centro, sin promediar.
+        assertEquals(listOf(null, LngLat(-99.2, 19.3)), prepared.positions)
+        assertEquals(listOf(ChartSeriesKey.ALTITUDE), prepared.series.map { it.key })
+    }
+
+    @Test
+    fun withoutGpsThereAreNoPositions() {
+        val prepared = prepareSeries(mapOf("TIME" to listOf(0.0, 1000.0), "POWER" to listOf(200.0, 210.0)), sampleCount = 2)
+        assertNull(prepared.positions)
     }
 
     @Test

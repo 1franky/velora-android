@@ -183,7 +183,7 @@ class AccessibilityChecksTest {
                 backLabel = R.string.detail_back,
                 onBack = {},
                 // MapLibre necesita red y GPU: en su lugar, un espacio del mismo tamaño con su etiqueta.
-                map = { title, _ ->
+                map = { title, _, _ ->
                     Box(Modifier.fillMaxWidth().height(260.dp).semantics { contentDescription = "Mapa de «$title»" })
                 },
             )

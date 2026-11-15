@@ -26,6 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -60,9 +63,11 @@ fun ActivityDetailScreen(
     viewModel: ActivityDetailViewModel,
     @StringRes backLabel: Int,
     onBack: () -> Unit,
-    map: @Composable (title: String, track: ActivityTrack) -> Unit,
+    map: @Composable (title: String, track: ActivityTrack, position: LngLat?) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Punto señalado en las gráficas, marcado en el mapa.
+    var position by remember { mutableStateOf<LngLat?>(null) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -80,9 +85,9 @@ fun ActivityDetailScreen(
             )
             is Remote.Ok -> {
                 Header(detail.value)
-                MapView(state.map, detail.value.title, map)
+                MapView(state.map, detail.value.title, position, map)
                 Metrics(detail.value)
-                SectionView(state.charts, R.string.charts_unavailable) { ActivityCharts(it) }
+                SectionView(state.charts, R.string.charts_unavailable) { ActivityCharts(it, onPosition = { p -> position = p }) }
                 SectionView(state.laps, R.string.laps_unavailable) { Laps(it) }
                 SectionView(state.climbs, R.string.climbs_unavailable) { Climbs(it) }
                 Source(detail.value)
@@ -92,11 +97,16 @@ fun ActivityDetailScreen(
 }
 
 @Composable
-private fun MapView(section: MapSection, title: String, map: @Composable (String, ActivityTrack) -> Unit) {
+private fun MapView(
+    section: MapSection,
+    title: String,
+    position: LngLat?,
+    map: @Composable (String, ActivityTrack, LngLat?) -> Unit,
+) {
     when (section) {
         MapSection.Loading -> Loading(null)
         is MapSection.Ready -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            map(title, section.track)
+            map(title, section.track, position)
             if (section.track.properties.trimmed) {
                 Text(stringResource(R.string.map_trimmed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

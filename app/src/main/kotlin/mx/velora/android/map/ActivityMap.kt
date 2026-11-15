@@ -8,7 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.luminance
@@ -25,6 +27,7 @@ import mx.velora.android.R
 import mx.velora.android.api.models.ActivityTrack
 import mx.velora.android.core.network.VeloraApi
 import mx.velora.android.core.session.SessionManager
+import mx.velora.android.detail.LngLat
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import org.maplibre.android.MapLibre
@@ -33,6 +36,7 @@ import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.module.http.HttpRequestUtil
+import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
@@ -60,10 +64,11 @@ private val DARK = TrackColors(line = "#f2a03d", casing = "#0d141c")
 
 /**
  * El recorrido sobre el mapa base de Velora, encuadrado completo. Sin gestos: dentro de una pantalla que se desplaza,
- * arrastrar el mapa competiría con el desplazamiento. Sin marcas de inicio ni fin (privacidad, ADR-016).
+ * arrastrar el mapa competiría con el desplazamiento. Sin marcas de inicio ni fin (privacidad, ADR-016). [position] es
+ * el punto señalado en las gráficas, como en la web.
  */
 @Composable
-fun ActivityMap(title: String, track: ActivityTrack, session: SessionManager, mapUrl: String) {
+fun ActivityMap(title: String, track: ActivityTrack, position: LngLat?, session: SessionManager, mapUrl: String) {
     val context = LocalContext.current
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val colors = if (dark) DARK else LIGHT
@@ -71,6 +76,7 @@ fun ActivityMap(title: String, track: ActivityTrack, session: SessionManager, ma
     val geoJson = remember(track) { VeloraApi.json.encodeToString(ActivityTrack.serializer(), track) }
     val label = stringResource(R.string.map_of, title)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val currentPosition by rememberUpdatedState(position)
 
     val mapView = remember {
         VeloraMap.start(context, session, mapUrl)
@@ -115,12 +121,27 @@ fun ActivityMap(title: String, track: ActivityTrack, session: SessionManager, ma
                             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
                         ),
                     )
+                    style.addSource(GeoJsonSource(POSITION, positionGeoJson(currentPosition)))
+                    style.addLayer(
+                        CircleLayer(POSITION, POSITION).withProperties(
+                            PropertyFactory.circleRadius(7f),
+                            PropertyFactory.circleColor(colors.line),
+                            PropertyFactory.circleStrokeColor(colors.casing),
+                            PropertyFactory.circleStrokeWidth(3f),
+                        ),
+                    )
                     // bbox: [oeste, sur, este, norte].
                     val (west, south, east, north) = track.bbox
                     map.moveCamera(CameraUpdateFactory.newLatLngBounds(LatLngBounds.from(north, east, south, west), PADDING))
                 }
             }
             mapView
+        },
+        // Antes de que cargue el estilo no hay fuente: el estilo arranca con la posición vigente.
+        update = { view ->
+            // Leer el estado aquí (no en el callback) hace que AndroidView repita este bloque cuando cambia.
+            val geoJson = positionGeoJson(currentPosition)
+            view.getMapAsync { map -> map.style?.getSourceAs<GeoJsonSource>(POSITION)?.setGeoJson(geoJson) }
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -132,4 +153,13 @@ fun ActivityMap(title: String, track: ActivityTrack, session: SessionManager, ma
 }
 
 private const val SOURCE = "recorrido"
+private const val POSITION = "posicion"
+
+/** El punto como GeoJSON; sin punto, una colección vacía. */
+internal fun positionGeoJson(position: LngLat?): String {
+    val features = position?.let {
+        """{"type":"Feature","geometry":{"type":"Point","coordinates":[${it.longitude},${it.latitude}]},"properties":{}}"""
+    }.orEmpty()
+    return """{"type":"FeatureCollection","features":[$features]}"""
+}
 private const val PADDING = 48

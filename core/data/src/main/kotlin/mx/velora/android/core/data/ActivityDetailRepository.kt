@@ -26,7 +26,10 @@ class ActivityDetailRepository(private val session: SessionManager) {
 
     suspend fun detail(id: UUID): Remote<ActivityDetail> = load { getActivity(id) }
 
-    /** Series para las gráficas, **sin posiciones**: las coordenadas solo se piden para el mapa, como recorrido. */
+    /**
+     * Series para las gráficas, con las posiciones para marcar en el mapa el punto señalado. La API las entrega en null
+     * en los tramos que oculta la privacidad de inicio y fin (ADR-016), igual que recorta el recorrido.
+     */
     suspend fun streams(id: UUID): Remote<ActivityStreams> = load { getActivityStreams(id, CHART_TYPES) }
 
     suspend fun laps(id: UUID): Remote<List<ActivityLap>> = when (val result = load { getActivityLaps(id) }) {
@@ -58,6 +61,8 @@ class ActivityDetailRepository(private val session: SessionManager) {
             StreamType.POWER,
             StreamType.CADENCE,
             StreamType.TEMPERATURE,
+            StreamType.LATITUDE,
+            StreamType.LONGITUDE,
         ).joinToString(",") { it.value }
     }
 }

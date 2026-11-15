@@ -16,9 +16,12 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,14 +53,19 @@ private enum class Axis(@StringRes val label: Int) {
 /**
  * Series de la rodada en paneles apilados con un eje horizontal compartido (como la web: nunca dos escalas en un panel).
  * Tocar o deslizar sobre cualquier panel mueve un mismo cursor en todos; su valor se lee en el encabezado de cada uno.
- * Sin cursor, el encabezado muestra mínimo y máximo: ningún dato depende de tocar la gráfica.
+ * Sin cursor, el encabezado muestra mínimo y máximo: ningún dato depende de tocar la gráfica. La posición del cursor
+ * sale por [onPosition] para marcarla en el mapa, como en la web.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActivityCharts(data: PreparedSeries) {
+fun ActivityCharts(data: PreparedSeries, onPosition: (LngLat?) -> Unit = {}) {
     val axes = listOfNotNull(Axis.DISTANCE.takeIf { data.distanceKm != null }, Axis.TIME.takeIf { data.elapsedSeconds != null })
     var axis by rememberSaveable { mutableStateOf(axes.first()) }
     var index by remember { mutableStateOf<Int?>(null) }
+    val currentOnPosition by rememberUpdatedState(onPosition)
+    LaunchedEffect(index, data) { currentOnPosition(index?.let { data.positions?.getOrNull(it) }) }
+    // Al salir de la pantalla, el mapa deja de marcar el punto.
+    DisposableEffect(Unit) { onDispose { currentOnPosition(null) } }
     val xValues = (if (axis == Axis.DISTANCE) data.distanceKm else data.elapsedSeconds).orEmpty()
     val finiteX = xValues.filterNotNull()
     val xMin = finiteX.minOrNull() ?: 0.0
