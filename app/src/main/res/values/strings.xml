@@ -322,6 +322,7 @@
     <string name="detail_derived">Calculada por Velora</string>
     <!-- %1$s: FIT, GPX o TCX; %2$s: tamaño; %3$s: fecha. -->
     <string name="detail_source">Importada de un archivo %1$s de %2$s el %3$s.</string>
+    <string name="detail_source_strava">Importada de Strava el %1$s.</string>
     <!-- %1$s: fecha con día de la semana; %2$s: hora de inicio (24 h). -->
     <string name="detail_started">%1$s, %2$s</string>
 
