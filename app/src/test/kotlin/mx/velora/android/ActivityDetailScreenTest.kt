@@ -33,7 +33,6 @@ import mx.velora.android.core.session.StoredSession
 import mx.velora.android.detail.ActivityDetailScreen
 import mx.velora.android.detail.ActivityDetailViewModel
 import org.junit.After
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -101,7 +100,10 @@ class ActivityDetailScreenTest {
                 viewModel { ActivityDetailViewModel(repository, UUID.fromString(id)) },
                 backLabel = R.string.detail_back,
                 onBack = { back = true },
-                map = { title, track -> Text("Mapa de prueba: $title, ${track.properties.returnedPointCount} puntos") },
+                map = { title, track, position ->
+                    Text("Mapa de prueba: $title, ${track.properties.returnedPointCount} puntos")
+                    position?.let { Text("Punto en el mapa: ${it.longitude}, ${it.latitude}") }
+                },
             )
         }
     }
@@ -129,6 +131,8 @@ class ActivityDetailScreenTest {
         compose.onNodeWithText("mín. 2,300 m, máx. 2,450 m", useUnmergedTree = true).assertExists()
         compose.onNodeWithContentDescription("Altitud: mín. 2,300 m, máx. 2,450 m").performScrollTo().performTouchInput { click(center) }
         waitForText("En el km", substring = true)
+        // El punto señalado se marca en el mapa (km 1.5 → la muestra 1 o 2, la que tenga posición).
+        waitForText("Punto en el mapa: -99.2, 19.3")
 
         waitForText("Vuelta 2")
         waitForText("Del 1.0 km al 3.5 km")
@@ -137,8 +141,8 @@ class ActivityDetailScreenTest {
 
         compose.onNodeWithText("Volver a actividades").performClick()
         assertTrue(back)
-        // Las gráficas nunca piden posiciones.
-        assertFalse(requests.any { it.contains("LATITUDE") || it.contains("LONGITUDE") })
+        // Las posiciones se piden con las series, para el punto del mapa.
+        assertTrue(requests.any { it.contains("LATITUDE") && it.contains("LONGITUDE") })
     }
 
     @Test
@@ -208,7 +212,8 @@ class ActivityDetailScreenTest {
 
         const val STREAMS = """
             {"sampleCount":4,"streams":{"TIME":[0,1000,2000,3000],"DISTANCE":[0,1000,2000,3000],
-             "ALTITUDE":[2300,2350,null,2450],"HEART_RATE":[120,140,150,160]}}"""
+             "ALTITUDE":[2300,2350,null,2450],"HEART_RATE":[120,140,150,160],
+             "LATITUDE":[null,19.3,null,19.5],"LONGITUDE":[null,-99.2,null,-99.0]}}"""
 
         const val LAPS = """
             {"items":[{"lapNumber":1,"startedAt":null,"elapsedTimeSeconds":4800,"timerTimeSeconds":4500,"distanceMeters":30000,

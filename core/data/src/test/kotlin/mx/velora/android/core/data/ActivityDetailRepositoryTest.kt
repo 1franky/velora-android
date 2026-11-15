@@ -16,7 +16,6 @@ import mx.velora.android.core.session.SessionManager
 import mx.velora.android.core.session.SessionStore
 import mx.velora.android.core.session.StoredSession
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -57,7 +56,7 @@ class ActivityDetailRepositoryTest {
     )
 
     @Test
-    fun streamsNeverAskForPositions() = runTest {
+    fun streamsAskForTheChartSeriesAndThePositions() = runTest {
         answer = { HttpStatusCode.OK to """{"sampleCount":2,"streams":{"ALTITUDE":[2300,null],"TIME":[0,1000]}}""" }
 
         val result = repository.streams(id)
@@ -65,8 +64,8 @@ class ActivityDetailRepositoryTest {
         assertEquals(listOf(2300.0, null), (result as Remote.Ok).value.streams["ALTITUDE"])
         val query = java.net.URLDecoder.decode(queries.single(), "UTF-8")
         assertTrue(query, query.contains("types=TIME,DISTANCE,ALTITUDE"))
-        assertFalse(query.contains("LATITUDE"))
-        assertFalse(query.contains("LONGITUDE"))
+        // Las posiciones marcan en el mapa el punto señalado; la API ya oculta las de inicio y fin (ADR-016).
+        assertTrue(query, query.contains("LATITUDE,LONGITUDE"))
     }
 
     @Test

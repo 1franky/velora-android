@@ -135,7 +135,7 @@ fun VeloraRoot(
                         viewModel { ActivityDetailViewModel(details, UUID.fromString(id)) },
                         backLabel = if (fromHome) R.string.detail_back_home else R.string.detail_back,
                         onBack = onBack,
-                        map = { title, track -> ActivityMap(title, track, session, mapUrl) },
+                        map = { title, track, position -> ActivityMap(title, track, position, session, mapUrl) },
                     )
                 },
             )
