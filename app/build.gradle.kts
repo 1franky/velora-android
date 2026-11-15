@@ -26,8 +26,8 @@ android {
         // Android 12 o posterior (decisión del 11/11/2026).
         minSdk = 31
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.2.2"
+        versionCode = 5
+        versionName = "0.2.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Solo es-MX por ahora: no empaquetar traducciones de las bibliotecas a otros idiomas.
         androidResources.localeFilters += listOf("es-rMX", "es")
