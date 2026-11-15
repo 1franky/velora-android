@@ -1,10 +1,6 @@
 package mx.velora.android.map
 
 import android.content.Context
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -12,13 +8,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -63,12 +57,28 @@ private val LIGHT = TrackColors(line = "#c76a0e", casing = "#ffffff")
 private val DARK = TrackColors(line = "#f2a03d", casing = "#0d141c")
 
 /**
- * El recorrido sobre el mapa base de Velora, encuadrado completo. Sin gestos: dentro de una pantalla que se desplaza,
- * arrastrar el mapa competiría con el desplazamiento. Sin marcas de inicio ni fin (privacidad, ADR-016). [position] es
+ * El recorrido sobre el mapa base de Velora. En el detalle es una vista previa encuadrada y sin gestos: dentro de una
+ * pantalla que se desplaza, arrastrar el mapa competiría con el desplazamiento. Su botón lo abre a pantalla completa,
+ * donde sí se puede acercar, mover y girar (ADR-024). Sin marcas de inicio ni fin (privacidad, ADR-016). [position] es
  * el punto señalado en las gráficas, como en la web.
  */
 @Composable
 fun ActivityMap(title: String, track: ActivityTrack, position: LngLat?, session: SessionManager, mapUrl: String) {
+    ExpandableMap(title) { interactive, modifier ->
+        TrackMap(title, track, position, session, mapUrl, interactive, modifier)
+    }
+}
+
+@Composable
+private fun TrackMap(
+    title: String,
+    track: ActivityTrack,
+    position: LngLat?,
+    session: SessionManager,
+    mapUrl: String,
+    interactive: Boolean,
+    modifier: Modifier,
+) {
     val context = LocalContext.current
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val colors = if (dark) DARK else LIGHT
@@ -83,6 +93,8 @@ fun ActivityMap(title: String, track: ActivityTrack, position: LngLat?, session:
         MapView(context).apply { onCreate(null) }
     }
     DisposableEffect(lifecycle, mapView) {
+        // Al agregarse, el observador recibe los eventos hasta el estado actual: un mapa abierto a pantalla completa
+        // arranca y se reanuda de inmediato.
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> mapView.onStart()
@@ -95,6 +107,8 @@ fun ActivityMap(title: String, track: ActivityTrack, position: LngLat?, session:
         lifecycle.addObserver(observer)
         onDispose {
             lifecycle.removeObserver(observer)
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) mapView.onPause()
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) mapView.onStop()
             mapView.onDestroy()
         }
     }
@@ -102,7 +116,13 @@ fun ActivityMap(title: String, track: ActivityTrack, position: LngLat?, session:
     AndroidView(
         factory = {
             mapView.getMapAsync { map ->
-                map.uiSettings.setAllGesturesEnabled(false)
+                if (interactive) {
+                    map.uiSettings.setAllGesturesEnabled(true)
+                    map.uiSettings.isTiltGesturesEnabled = false
+                    map.uiSettings.isCompassEnabled = true
+                } else {
+                    map.uiSettings.setAllGesturesEnabled(false)
+                }
                 map.setStyle(Style.Builder().fromUri(styleUrl)) { style ->
                     style.addSource(GeoJsonSource(SOURCE, geoJson))
                     style.addLayer(
@@ -132,7 +152,8 @@ fun ActivityMap(title: String, track: ActivityTrack, position: LngLat?, session:
                     )
                     // bbox: [oeste, sur, este, norte].
                     val (west, south, east, north) = track.bbox
-                    map.moveCamera(CameraUpdateFactory.newLatLngBounds(LatLngBounds.from(north, east, south, west), PADDING))
+                    val padding = if (interactive) FULLSCREEN_PADDING else PADDING
+                    map.moveCamera(CameraUpdateFactory.newLatLngBounds(LatLngBounds.from(north, east, south, west), padding))
                 }
             }
             mapView
@@ -143,12 +164,7 @@ fun ActivityMap(title: String, track: ActivityTrack, position: LngLat?, session:
             val geoJson = positionGeoJson(currentPosition)
             view.getMapAsync { map -> map.style?.getSourceAs<GeoJsonSource>(POSITION)?.setGeoJson(geoJson) }
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(260.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-            .semantics { contentDescription = label },
+        modifier = modifier.semantics { contentDescription = label },
     )
 }
 
@@ -163,3 +179,5 @@ internal fun positionGeoJson(position: LngLat?): String {
     return """{"type":"FeatureCollection","features":[$features]}"""
 }
 private const val PADDING = 48
+/** Más aire arriba: ahí van el botón de cerrar y el título. */
+private const val FULLSCREEN_PADDING = 96
