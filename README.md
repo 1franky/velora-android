@@ -2,7 +2,7 @@
 
 Aplicación Android nativa de **Velora**, plataforma personal de analítica de ciclismo (ruta y MTB).
 
-> Estado: Fase 6 completa y Rendimiento (inicio de sesión, Inicio, historial, detalle con mapa, Rendimiento, importación y sincronización). Última versión publicada: v0.2.3. La especificación está en `../docs/07-android-application.md` del kit.
+> Estado: Fase 6 completa y Rendimiento (inicio de sesión, Inicio, historial, detalle con mapa, Rendimiento, importación y sincronización). Última versión publicada: v0.2.4. La especificación está en `../docs/07-android-application.md` del kit.
 
 ## Stack
 
@@ -61,7 +61,7 @@ Para cerrar una versión:
 
 ```bash
 # 1. Sube versionCode y versionName en app/build.gradle.kts (PR e integración a main)
-git tag v0.2.3 && git push origin v0.2.3
+git tag v0.2.4 && git push origin v0.2.4
 ```
 
 La llave de firma vive en GitHub Secrets (`RELEASE_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
