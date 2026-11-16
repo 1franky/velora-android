@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
@@ -17,11 +18,13 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.launch
 import mx.velora.android.R
 import mx.velora.android.api.models.ActivityTrack
 import mx.velora.android.core.network.VeloraApi
 import mx.velora.android.core.session.SessionManager
 import mx.velora.android.detail.LngLat
+import mx.velora.android.detail.MAX_TRACK_ZOOM
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import org.maplibre.android.MapLibre
@@ -63,22 +66,38 @@ private val DARK = TrackColors(line = "#f2a03d", casing = "#0d141c")
  * el punto señalado en las gráficas, como en la web.
  */
 @Composable
-fun ActivityMap(title: String, track: ActivityTrack, position: LngLat?, session: SessionManager, mapUrl: String) {
+fun ActivityMap(
+    title: String,
+    track: ActivityTrack,
+    position: LngLat?,
+    detailed: suspend (zoom: Int) -> ActivityTrack?,
+    session: SessionManager,
+    mapUrl: String,
+) {
     ExpandableMap(title) { interactive, modifier ->
-        TrackMap(title, track, position, session, mapUrl, interactive, modifier)
+        TrackMap(title, track, position, detailed.takeIf { interactive }, session, mapUrl, interactive, modifier)
     }
 }
+
+/**
+ * Zoom con el que pedir el recorrido para un mapa en [mapZoom], como `trackZoomFor` de la web; null si el que ya se
+ * tiene ([loaded]) alcanza. Solo sube: al alejarse, el recorrido más detallado sigue sirviendo.
+ */
+internal fun nextTrackZoom(mapZoom: Double, loaded: Int): Int? =
+    kotlin.math.ceil(mapZoom).toInt().coerceIn(0, MAX_TRACK_ZOOM).takeIf { it > loaded }
 
 @Composable
 private fun TrackMap(
     title: String,
     track: ActivityTrack,
     position: LngLat?,
+    detailed: (suspend (zoom: Int) -> ActivityTrack?)?,
     session: SessionManager,
     mapUrl: String,
     interactive: Boolean,
     modifier: Modifier,
 ) {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val colors = if (dark) DARK else LIGHT
@@ -154,6 +173,19 @@ private fun TrackMap(
                     val (west, south, east, north) = track.bbox
                     val padding = if (interactive) FULLSCREEN_PADDING else PADDING
                     map.moveCamera(CameraUpdateFactory.newLatLngBounds(LatLngBounds.from(north, east, south, west), padding))
+                    // Pantalla completa: al detenerse más cerca, el recorrido se vuelve a pedir con más detalle.
+                    if (detailed != null) {
+                        var loaded = track.properties.zoom
+                        map.addOnCameraIdleListener {
+                            val zoom = nextTrackZoom(map.cameraPosition.zoom, loaded) ?: return@addOnCameraIdleListener
+                            loaded = zoom
+                            scope.launch {
+                                val better = detailed(zoom) ?: return@launch
+                                val json = VeloraApi.json.encodeToString(ActivityTrack.serializer(), better)
+                                style.getSourceAs<GeoJsonSource>(SOURCE)?.setGeoJson(json)
+                            }
+                        }
+                    }
                 }
             }
             mapView

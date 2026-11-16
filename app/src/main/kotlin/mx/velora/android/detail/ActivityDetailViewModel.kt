@@ -54,6 +54,9 @@ data class DetailState(
     val climbs: Section<ActivityClimbs> = Section.Loading,
 )
 
+/** El zoom más alto que acepta `/activities/{id}/track`. */
+const val MAX_TRACK_ZOOM = 22
+
 class ActivityDetailViewModel(private val repository: ActivityDetailRepository, private val id: UUID) : ViewModel() {
 
     private val _state = MutableStateFlow(DetailState())
@@ -62,6 +65,13 @@ class ActivityDetailViewModel(private val repository: ActivityDetailRepository, 
     init {
         load()
     }
+
+    /**
+     * El recorrido con más detalle para un mapa acercado (pantalla completa), como hace la web al acercarse. null si no
+     * se pudo: el mapa se queda con el que ya tiene.
+     */
+    suspend fun trackAt(zoom: Int): ActivityTrack? =
+        (repository.track(id, zoom.coerceIn(ActivityDetailRepository.TRACK_ZOOM, MAX_TRACK_ZOOM)) as? Remote.Ok)?.value
 
     fun load() {
         _state.value = DetailState()
