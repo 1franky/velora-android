@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.designsystem.VeloraTheme
@@ -33,6 +34,7 @@ import mx.velora.android.core.session.StoredSession
 import mx.velora.android.detail.ActivityDetailScreen
 import mx.velora.android.detail.ActivityDetailViewModel
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -100,7 +102,7 @@ class ActivityDetailScreenTest {
                 viewModel { ActivityDetailViewModel(repository, UUID.fromString(id)) },
                 backLabel = R.string.detail_back,
                 onBack = { back = true },
-                map = { title, track, position ->
+                map = { title, track, position, _ ->
                     Text("Mapa de prueba: $title, ${track.properties.returnedPointCount} puntos")
                     position?.let { Text("Punto en el mapa: ${it.longitude}, ${it.latitude}") }
                 },
@@ -143,6 +145,27 @@ class ActivityDetailScreenTest {
         assertTrue(back)
         // Las posiciones se piden con las series, para el punto del mapa.
         assertTrue(requests.any { it.contains("LATITUDE") && it.contains("LONGITUDE") })
+    }
+
+    @Test
+    fun aZoomedMapAsksForAMoreDetailedTrackWithinTheApiLimits() {
+        val viewModel = ActivityDetailViewModel(repository, UUID.fromString(id))
+        val results = CopyOnWriteArrayList<Boolean>()
+        // Con la pantalla montada, waitUntil hace avanzar el hilo principal, donde trabaja el ViewModel.
+        start()
+        waitForText("Vuelta al Ajusco")
+        scope.launch {
+            results += viewModel.trackAt(17) != null
+            results += viewModel.trackAt(30) != null
+            trackHidden = true
+            results += viewModel.trackAt(18) == null
+        }
+        compose.waitUntil(5_000) { results.size == 3 }
+
+        assertEquals(listOf(true, true, true), results.toList())
+        assertTrue(requests.toString(), requests.any { it.endsWith("/track?zoom=17") })
+        // Nunca más del máximo que acepta la API.
+        assertTrue(requests.toString(), requests.any { it.endsWith("/track?zoom=22") })
     }
 
     @Test

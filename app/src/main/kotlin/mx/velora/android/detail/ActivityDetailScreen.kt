@@ -63,7 +63,7 @@ fun ActivityDetailScreen(
     viewModel: ActivityDetailViewModel,
     @StringRes backLabel: Int,
     onBack: () -> Unit,
-    map: @Composable (title: String, track: ActivityTrack, position: LngLat?) -> Unit,
+    map: @Composable (title: String, track: ActivityTrack, position: LngLat?, detailed: suspend (zoom: Int) -> ActivityTrack?) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Punto señalado en las gráficas, marcado en el mapa.
@@ -85,7 +85,7 @@ fun ActivityDetailScreen(
             )
             is Remote.Ok -> {
                 Header(detail.value)
-                MapView(state.map, detail.value.title, position, map)
+                MapView(state.map, detail.value.title, position, viewModel::trackAt, map)
                 Metrics(detail.value)
                 SectionView(state.charts, R.string.charts_unavailable) { ActivityCharts(it, onPosition = { p -> position = p }) }
                 SectionView(state.laps, R.string.laps_unavailable) { Laps(it) }
@@ -101,12 +101,13 @@ private fun MapView(
     section: MapSection,
     title: String,
     position: LngLat?,
-    map: @Composable (String, ActivityTrack, LngLat?) -> Unit,
+    detailed: suspend (Int) -> ActivityTrack?,
+    map: @Composable (String, ActivityTrack, LngLat?, suspend (Int) -> ActivityTrack?) -> Unit,
 ) {
     when (section) {
         MapSection.Loading -> Loading(null)
         is MapSection.Ready -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            map(title, section.track, position)
+            map(title, section.track, position, detailed)
             if (section.track.properties.trimmed) {
                 Text(stringResource(R.string.map_trimmed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
