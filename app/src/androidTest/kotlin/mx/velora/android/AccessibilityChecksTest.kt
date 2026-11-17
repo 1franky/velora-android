@@ -17,8 +17,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,6 +60,7 @@ import mx.velora.android.detail.ActivityDetailViewModel
 import mx.velora.android.home.HomeScreen
 import mx.velora.android.home.HomeViewModel
 import mx.velora.android.imports.ImportScreen
+import mx.velora.android.map.ExpandableMap
 import mx.velora.android.performance.PerformanceScreen
 import mx.velora.android.performance.PerformanceViewModel
 import mx.velora.android.imports.ImportViewModel
@@ -194,6 +198,43 @@ class AccessibilityChecksTest {
 
     @Test fun detailDark() = detail(dark = true)
 
+    /** Marco real del mapa (botón y diálogo); el mapa en sí es un espacio etiquetado, igual que en [detail]. */
+    @androidx.compose.runtime.Composable
+    private fun ExpandableRideMap() {
+        Column {
+            Text(RIDE_TITLE, style = MaterialTheme.typography.titleLarge)
+            ExpandableMap(RIDE_TITLE) { _, modifier ->
+                Box(modifier.semantics { contentDescription = "Mapa de «$RIDE_TITLE»" })
+            }
+        }
+    }
+
+    private fun mapPreview(dark: Boolean) = check(dark, RIDE_TITLE) { ExpandableRideMap() }
+
+    @Test fun mapPreview() = mapPreview(dark = false)
+
+    @Test fun mapPreviewDark() = mapPreview(dark = true)
+
+    private fun mapFullScreen(dark: Boolean) {
+        val open = context.getString(R.string.map_fullscreen_open)
+        val close = context.getString(R.string.map_fullscreen_close)
+        check(dark, RIDE_TITLE) { ExpandableRideMap() }
+        compose.onNodeWithContentDescription(open).performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodes(androidx.compose.ui.test.hasContentDescription(close)).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.waitForIdle()
+        // El diálogo es otra ventana con su propia raíz: se revisa esa, la última.
+        val roots = compose.onAllNodes(isRoot())
+        val count = roots.fetchSemanticsNodes().size
+        assertTrue("el diálogo no abrió una ventana aparte", count >= 2)
+        roots[count - 1].tryPerformAccessibilityChecks()
+    }
+
+    @Test fun mapFullScreen() = mapFullScreen(dark = false)
+
+    @Test fun mapFullScreenDark() = mapFullScreen(dark = true)
+
     private fun imports(dark: Boolean) {
         runBlocking {
             listOf("WAITING" to null, "COMPLETED" to null, "REJECTED" to "MALFORMED_FILE").forEachIndexed { i, (state, error) ->
@@ -260,6 +301,7 @@ class AccessibilityChecksTest {
 
     private companion object {
         const val RIDE = "6f1c3c62-5a0e-4a4e-9a51-0b2c8f8d2f10"
+        const val RIDE_TITLE = "Vuelta al Ajusco"
 
         const val TOKENS =
             """{"tokenType":"Bearer","accessToken":"a1","accessTokenExpiresIn":900,"refreshToken":"r1","refreshTokenExpiresIn":2592000}"""
