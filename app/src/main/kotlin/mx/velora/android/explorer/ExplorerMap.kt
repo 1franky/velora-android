@@ -13,6 +13,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.viewinterop.AndroidView
 import mx.velora.android.R
 import mx.velora.android.api.models.ExplorationCells
+import mx.velora.android.core.data.ActivityFilters
+import mx.velora.android.core.data.heatmapQuery
 import mx.velora.android.core.network.VeloraApi
 import mx.velora.android.core.session.SessionManager
 import mx.velora.android.map.DARK
@@ -37,8 +39,12 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.android.style.sources.TileSet
 import org.maplibre.android.style.sources.VectorSource
 
-/** Teselas del mapa de calor de la API de [serverUrl] (`/geo/heatmap/{z}/{x}/{y}`, ADR-017). */
-fun heatmapTilesUrl(serverUrl: String): String = VeloraApi.baseUrl(serverUrl) + "/geo/heatmap/{z}/{x}/{y}"
+/** Teselas del mapa de calor de la API de [serverUrl] (`/geo/heatmap/{z}/{x}/{y}`, ADR-017), con los filtros. */
+fun heatmapTilesUrl(serverUrl: String, filters: ActivityFilters = ActivityFilters()): String {
+    val base = VeloraApi.baseUrl(serverUrl) + "/geo/heatmap/{z}/{x}/{y}"
+    val query = heatmapQuery(filters)
+    return if (query.isEmpty()) base else "$base?$query"
+}
 
 /**
  * El mapa del explorador: el mapa de calor (recorridos translúcidos: donde se enciman muchos, el color se satura), las
@@ -71,6 +77,8 @@ fun ExplorerMap(
     val currentTarget by rememberUpdatedState(target)
     // Último movimiento de cámara aplicado: cada uno se aplica una sola vez.
     val applied = remember { intArrayOf(0) }
+    // Teselas dibujadas: con otros filtros, la fuente se reemplaza (MapLibre no cambia las de una fuente existente).
+    val drawnTiles = remember { arrayOf(tilesUrl) }
 
     AndroidView(
         factory = {
@@ -80,7 +88,7 @@ fun ExplorerMap(
                 map.uiSettings.isCompassEnabled = true
                 map.setMaxZoomPreference(MAX_ZOOM)
                 map.setStyle(Style.Builder().fromUri(styleUrl)) { style ->
-                    addExplorerLayers(style, colors, tilesUrl, currentCells, currentSquare)
+                    addExplorerLayers(style, colors, drawnTiles[0], currentCells, currentSquare)
                     map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds(MEXICO), 0))
                     currentTarget?.let { map.goTo(it, applied, animate = false) }
                     map.addOnCameraIdleListener { reportViewport(map.viewport()) }
@@ -94,8 +102,13 @@ fun ExplorerMap(
             val nextCells = cells
             val nextSquare = square
             val nextTarget = target
+            val nextTiles = tilesUrl
             view.getMapAsync { map ->
                 val style = map.style?.takeIf { it.isFullyLoaded } ?: return@getMapAsync
+                if (nextTiles != drawnTiles[0]) {
+                    drawnTiles[0] = nextTiles
+                    replaceHeatmap(style, colors, nextTiles)
+                }
                 style.getSourceAs<GeoJsonSource>(CELLS)?.setGeoJson(nextCells)
                 style.getSourceAs<GeoJsonSource>(SQUARE)?.setGeoJson(nextSquare)
                 nextTarget?.let { map.goTo(it, applied, animate = true) }
@@ -111,16 +124,8 @@ fun ExplorerMap(
  * cuadrado. [cells] y [square] son GeoJSON.
  */
 internal fun addExplorerLayers(style: Style, colors: TrackColors, tilesUrl: String, cells: String, square: String) {
-    style.addSource(VectorSource(HEAT, TileSet("2.1.0", tilesUrl).apply { minZoom = 0f; maxZoom = HEATMAP_MAX_ZOOM }))
-    style.addLayer(
-        LineLayer(HEAT, HEAT).withSourceLayer("recorridos").withProperties(
-            PropertyFactory.lineColor(colors.line),
-            PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
-            PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
-            PropertyFactory.lineOpacity(interpolate(linear(), zoom(), stop(4, 0.5f), stop(12, 0.6f), stop(16, 0.7f))),
-            PropertyFactory.lineWidth(interpolate(exponential(1.6f), zoom(), stop(4, 1.2f), stop(12, 2.5f), stop(16, 4.5f))),
-        ),
-    )
+    style.addSource(heatmapSource(tilesUrl))
+    style.addLayer(heatmapLayer(colors))
     // Las celdas van debajo de los recorridos, más opacas cuantas más rodadas pasaron por ellas.
     style.addSource(GeoJsonSource(CELLS, cells))
     style.addLayerBelow(
@@ -147,6 +152,26 @@ internal fun addExplorerLayers(style: Style, colors: TrackColors, tilesUrl: Stri
         ),
     )
 }
+
+/** Otros filtros: la misma capa con otras teselas, en el mismo lugar (encima de las celdas, debajo del cuadrado). */
+internal fun replaceHeatmap(style: Style, colors: TrackColors, tilesUrl: String) {
+    style.removeLayer(HEAT)
+    style.removeSource(HEAT)
+    style.addSource(heatmapSource(tilesUrl))
+    style.addLayerBelow(heatmapLayer(colors), SQUARE)
+}
+
+private fun heatmapSource(tilesUrl: String) =
+    VectorSource(HEAT, TileSet("2.1.0", tilesUrl).apply { minZoom = 0f; maxZoom = HEATMAP_MAX_ZOOM })
+
+private fun heatmapLayer(colors: TrackColors) =
+    LineLayer(HEAT, HEAT).withSourceLayer("recorridos").withProperties(
+        PropertyFactory.lineColor(colors.line),
+        PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
+        PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
+        PropertyFactory.lineOpacity(interpolate(linear(), zoom(), stop(4, 0.5f), stop(12, 0.6f), stop(16, 0.7f))),
+        PropertyFactory.lineWidth(interpolate(exponential(1.6f), zoom(), stop(4, 1.2f), stop(12, 2.5f), stop(16, 4.5f))),
+    )
 
 private fun MapLibreMap.goTo(target: CameraTarget, applied: IntArray, animate: Boolean) {
     if (target.id <= applied[0]) return

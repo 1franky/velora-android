@@ -284,7 +284,7 @@ class AccessibilityChecksTest {
     @Test fun settingsDark() = settings(dark = true)
 
     /** El explorador con un mapa sustituto (MapLibre necesita red y GPU); el resto de la pantalla es el real. */
-    private fun explorer(dark: Boolean, openStats: Boolean) {
+    private fun explorer(dark: Boolean, openStats: Boolean = false, openFilters: Boolean = false) {
         withRideList = true
         val repository = ExplorerRepository(session(signedIn = true))
         // El recorrido de la rodada responde 404 (oculto): el mapa se queda en México y lo avisa.
@@ -293,10 +293,18 @@ class AccessibilityChecksTest {
                 Box(modifier.semantics { contentDescription = "Mapa de calor de tus rodadas" })
             }
         }
-        if (!openStats) return
-        compose.onAllNodesWithText(context.getString(R.string.explorer_stats_open)).onFirst().performClick()
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Hexágonos", substring = true, useUnmergedTree = true).fetchSemanticsNodes().size >= 2
+        if (!openStats && !openFilters) return
+        if (openStats) {
+            compose.onAllNodesWithText(context.getString(R.string.explorer_stats_open)).onFirst().performClick()
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Hexágonos", substring = true, useUnmergedTree = true).fetchSemanticsNodes().size >= 2
+            }
+        } else {
+            // La misma hoja de filtros de Actividades, sin distancias.
+            compose.onAllNodesWithText(context.getString(R.string.activities_filters)).onFirst().performClick()
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText(context.getString(R.string.activities_filter_apply), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            }
         }
         compose.waitForIdle()
         // La hoja es otra ventana con su propia raíz: se revisa esa, la última.
@@ -306,9 +314,13 @@ class AccessibilityChecksTest {
         roots[count - 1].tryPerformAccessibilityChecks()
     }
 
-    @Test fun explorer() = explorer(dark = false, openStats = false)
+    @Test fun explorer() = explorer(dark = false)
 
-    @Test fun explorerDark() = explorer(dark = true, openStats = false)
+    @Test fun explorerDark() = explorer(dark = true)
+
+    @Test fun explorerFilters() = explorer(dark = false, openFilters = true)
+
+    @Test fun explorerFiltersDark() = explorer(dark = true, openFilters = true)
 
     @Test fun explorerStats() = explorer(dark = false, openStats = true)
 

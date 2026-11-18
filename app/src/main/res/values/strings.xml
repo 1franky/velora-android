@@ -343,6 +343,8 @@
     <string name="explorer_cells_zoom_in">Acércate para ver las celdas.</string>
     <string name="explorer_cells_truncated">Hay demasiadas celdas en esta vista: se muestran las más recorridas. Acércate para verlas todas.</string>
     <string name="explorer_cells_unavailable">No pudimos cargar las celdas. Mueve el mapa para intentarlo de nuevo.</string>
+    <string name="explorer_no_matches">Ninguna rodada con GPS coincide con estos filtros.</string>
+    <string name="explorer_cells_all_time">Las celdas incluyen todas tus rodadas; los filtros solo cambian las líneas.</string>
     <string name="explorer_no_gps">Tus rodadas recientes no tienen GPS (por ejemplo, en rodillo), así que el mapa empieza en México.</string>
     <string name="explorer_empty_title">Aún no hay nada que explorar</string>
     <string name="explorer_empty_body">Importa tus archivos FIT, GPX o TCX y aquí aparecerán todos tus recorridos juntos.</string>

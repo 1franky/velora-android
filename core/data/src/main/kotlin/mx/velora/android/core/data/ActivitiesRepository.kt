@@ -64,15 +64,7 @@ class ActivitiesRepository(private val session: SessionManager, private val dao:
     suspend fun search(filters: ActivityFilters, cursor: String?): PageResult = page(filters, cursor)
 
     /** Las bicicletas para el filtro; null si no se pudieron cargar. */
-    suspend fun bikes(): List<Bike>? {
-        var bikes: List<Bike>? = null
-        fetch {
-            val response = session.call { listBikes() }
-            if (response.success) bikes = response.body().items
-            RefreshResult.UPDATED
-        }
-        return bikes
-    }
+    suspend fun bikes(): List<Bike>? = loadBikes(session)
 
     private suspend fun page(filters: ActivityFilters, cursor: String?): PageResult {
         var loaded: PageResult? = null
@@ -134,3 +126,14 @@ private fun ActivityEntity.toSummary() = ActivitySummary(
     averageSpeedMps = averageSpeedMps,
     bikeId = bikeId?.let(UUID::fromString),
 )
+
+/** Las bicicletas para los filtros; null si no se pudieron cargar. */
+internal suspend fun loadBikes(session: SessionManager): List<Bike>? {
+    var bikes: List<Bike>? = null
+    fetch {
+        val response = session.call { listBikes() }
+        if (response.success) bikes = response.body().items
+        RefreshResult.UPDATED
+    }
+    return bikes
+}

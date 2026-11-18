@@ -10,6 +10,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import mx.velora.android.explorer.addExplorerLayers
+import mx.velora.android.explorer.replaceHeatmap
 import mx.velora.android.explorer.squareGeoJson
 import mx.velora.android.map.LIGHT
 import org.junit.Assert.assertEquals
@@ -49,6 +50,8 @@ class ExplorerLayersTest {
                                         addExplorerLayers(style, LIGHT, "http://servidor/api/v1/geo/heatmap/{z}/{x}/{y}", EMPTY, squareGeoJson(null))
                                         style.getSourceAs<GeoJsonSource>("celdas")!!.setGeoJson(CELLS)
                                         style.getSourceAs<GeoJsonSource>("mayor-cuadrado")!!.setGeoJson(squareGeoJson(listOf(-99.0, 19.0, -98.9, 19.1)))
+                                        // Otros filtros: la capa se reemplaza en el mismo lugar.
+                                        replaceHeatmap(style, LIGHT, "http://servidor/api/v1/geo/heatmap/{z}/{x}/{y}?subType=ROAD")
                                         style.layers.map { it.id }.filterNot { it.startsWith("org.maplibre.") }
                                     },
                                 )
