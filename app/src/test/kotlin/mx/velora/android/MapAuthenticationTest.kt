@@ -56,6 +56,25 @@ class MapAuthenticationTest {
     }
 
     @Test
+    fun alsoSendsTheTokenToTheApiOfTheSession() {
+        val api = MockWebServer().apply { start() }
+        try {
+            val auth = MapAuthentication(map.url("/"), token = { token }, renew = { token }, apiOrigin = { api.url("/") })
+            val client = OkHttpClient.Builder().addInterceptor(auth).authenticator(auth).build()
+            api.enqueue(MockResponse.Builder().code(204).build())
+            other.enqueue(MockResponse.Builder().code(200).build())
+
+            client.newCall(Request.Builder().url(api.url("/api/v1/geo/heatmap/12/1000/1800")).build()).execute().close()
+            client.newCall(Request.Builder().url(other.url("/api/v1/geo/heatmap/12/1000/1800")).build()).execute().close()
+
+            assertEquals("Bearer acceso-1", api.takeRequest().headers["Authorization"])
+            assertNull(other.takeRequest().headers["Authorization"])
+        } finally {
+            api.close()
+        }
+    }
+
+    @Test
     fun renewsOnceWhenTheMapRejectsTheToken() {
         map.enqueue(MockResponse.Builder().code(401).build())
         map.enqueue(MockResponse.Builder().code(200).body("{}").build())

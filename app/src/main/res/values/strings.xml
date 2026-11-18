@@ -5,6 +5,7 @@
     <string name="nav_label">Navegación principal</string>
     <string name="nav_home">Inicio</string>
     <string name="nav_activities">Actividades</string>
+    <string name="nav_explorer">Explorador</string>
     <string name="nav_performance">Rendimiento</string>
     <string name="nav_settings">Configuración</string>
 
@@ -332,6 +333,40 @@
     <string name="map_unavailable">No pudimos cargar el recorrido.</string>
     <string name="map_fullscreen_open">Ver el mapa en pantalla completa</string>
     <string name="map_fullscreen_close">Cerrar el mapa</string>
+
+    <!-- Explorador (ADR-017, ADR-018): los mismos textos que la web. -->
+    <string name="explorer_map_label">Mapa de calor de tus rodadas</string>
+    <string name="explorer_layers">Qué mostrar en el mapa</string>
+    <string name="explorer_layer_tracks">Recorridos</string>
+    <string name="explorer_layer_squares">Cuadros</string>
+    <string name="explorer_layer_hexagons">Hexágonos</string>
+    <string name="explorer_cells_zoom_in">Acércate para ver las celdas.</string>
+    <string name="explorer_cells_truncated">Hay demasiadas celdas en esta vista: se muestran las más recorridas. Acércate para verlas todas.</string>
+    <string name="explorer_cells_unavailable">No pudimos cargar las celdas. Mueve el mapa para intentarlo de nuevo.</string>
+    <string name="explorer_no_gps">Tus rodadas recientes no tienen GPS (por ejemplo, en rodillo), así que el mapa empieza en México.</string>
+    <string name="explorer_empty_title">Aún no hay nada que explorar</string>
+    <string name="explorer_empty_body">Importa tus archivos FIT, GPX o TCX y aquí aparecerán todos tus recorridos juntos.</string>
+    <string name="explorer_empty_action">Importar actividades</string>
+    <string name="explorer_unavailable">El explorador dibuja tus rodadas desde el servidor y necesita conexión. Intenta de nuevo cuando la tengas.</string>
+    <string name="explorer_stats_open">Territorio explorado</string>
+    <string name="explorer_stats_title">Territorio explorado</string>
+    <string name="explorer_stats_failed">No pudimos cargar estas cifras.</string>
+    <string name="explorer_stats_squares">Cuadros de 1 km</string>
+    <string name="explorer_stats_squares_hint">%s km² recorridos en México</string>
+    <string name="explorer_stats_largest_square">Mayor cuadrado</string>
+    <!-- %1$s: lado del cuadrado en celdas. -->
+    <string name="explorer_stats_square_value">%1$s × %1$s km</string>
+    <string name="explorer_stats_square_hint">%s km² sin un solo cuadro sin visitar</string>
+    <string name="explorer_stats_no_square">Aún no hay cuadros recorridos</string>
+    <string name="explorer_stats_hexagons">Hexágonos</string>
+    <string name="explorer_stats_hexagons_hint">Unos %s km² (cuadrícula H3, área aproximada)</string>
+    <string name="explorer_stats_all_time">Incluye todas tus rodadas. Los inicios y finales ocultos por tu privacidad no cuentan.</string>
+    <plurals name="explorer_stats_pending">
+        <item quantity="one">Calculando las celdas de %s rodada… Vuelve en unos minutos.</item>
+        <item quantity="many">Calculando las celdas de %s rodadas… Vuelve en unos minutos.</item>
+        <item quantity="other">Calculando las celdas de %s rodadas… Vuelve en unos minutos.</item>
+    </plurals>
+    <string name="explorer_show_square">Ver mi mayor cuadrado</string>
 
     <string name="charts_title">Gráficas</string>
     <string name="charts_axis">Eje horizontal</string>

@@ -19,6 +19,7 @@ import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -59,6 +60,9 @@ import mx.velora.android.detail.ActivityDetailScreen
 import mx.velora.android.detail.ActivityDetailViewModel
 import mx.velora.android.home.HomeScreen
 import mx.velora.android.home.HomeViewModel
+import mx.velora.android.core.data.ExplorerRepository
+import mx.velora.android.explorer.ExplorerScreen
+import mx.velora.android.explorer.ExplorerViewModel
 import mx.velora.android.imports.ImportScreen
 import mx.velora.android.map.ExpandableMap
 import mx.velora.android.performance.PerformanceScreen
@@ -86,6 +90,9 @@ class AccessibilityChecksTest {
     private val db = VeloraDatabase.inMemory(context)
     private val json = headersOf(HttpHeaders.ContentType, "application/json")
 
+    /** Solo para el explorador: las demás pantallas siguen usando su caché, como siempre en esta prueba. */
+    @Volatile private var withRideList = false
+
     /** Una API que responde el detalle de una rodada; todo lo demás, sin conexión (las pantallas usan su caché). */
     private val engine = MockEngine { request ->
         val path = request.url.encodedPath
@@ -101,6 +108,9 @@ class AccessibilityChecksTest {
             path == "/api/v1/analytics/eddington" -> respond(EDDINGTON, HttpStatusCode.OK, json)
             path == "/api/v1/analytics/heart-rate" -> respond(HEART_RATE, HttpStatusCode.OK, json)
             path == "/api/v1/analytics/training-load" -> respond(LOAD, HttpStatusCode.OK, json)
+            path == "/api/v1/activities" && withRideList -> respond(RIDE_LIST, HttpStatusCode.OK, json)
+            path == "/api/v1/geo/exploration/summary" -> respond(EXPLORATION, HttpStatusCode.OK, json)
+            path == "/api/v1/geo/exploration/largest-square" -> respond(LARGEST_SQUARE, HttpStatusCode.OK, json)
             else -> throw IOException("sin red")
         }
     }
@@ -273,6 +283,37 @@ class AccessibilityChecksTest {
 
     @Test fun settingsDark() = settings(dark = true)
 
+    /** El explorador con un mapa sustituto (MapLibre necesita red y GPU); el resto de la pantalla es el real. */
+    private fun explorer(dark: Boolean, openStats: Boolean) {
+        withRideList = true
+        val repository = ExplorerRepository(session(signedIn = true))
+        // El recorrido de la rodada responde 404 (oculto): el mapa se queda en México y lo avisa.
+        check(dark, "no tienen GPS") {
+            ExplorerScreen(viewModel { ExplorerViewModel(repository) }, onImport = {}) { _, _, modifier ->
+                Box(modifier.semantics { contentDescription = "Mapa de calor de tus rodadas" })
+            }
+        }
+        if (!openStats) return
+        compose.onAllNodesWithText(context.getString(R.string.explorer_stats_open)).onFirst().performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Hexágonos", substring = true, useUnmergedTree = true).fetchSemanticsNodes().size >= 2
+        }
+        compose.waitForIdle()
+        // La hoja es otra ventana con su propia raíz: se revisa esa, la última.
+        val roots = compose.onAllNodes(isRoot())
+        val count = roots.fetchSemanticsNodes().size
+        assertTrue("la hoja no abrió una ventana aparte", count >= 2)
+        roots[count - 1].tryPerformAccessibilityChecks()
+    }
+
+    @Test fun explorer() = explorer(dark = false, openStats = false)
+
+    @Test fun explorerDark() = explorer(dark = true, openStats = false)
+
+    @Test fun explorerStats() = explorer(dark = false, openStats = true)
+
+    @Test fun explorerStatsDark() = explorer(dark = true, openStats = true)
+
     private fun performance(dark: Boolean) {
         val repository = PerformanceRepository(session(signedIn = true))
         check(dark, "Carga de entrenamiento") {
@@ -302,6 +343,19 @@ class AccessibilityChecksTest {
     private companion object {
         const val RIDE = "6f1c3c62-5a0e-4a4e-9a51-0b2c8f8d2f10"
         const val RIDE_TITLE = "Vuelta al Ajusco"
+
+        const val RIDE_LIST = """
+            {"items":[{"id":"$RIDE","title":"Vuelta al Ajusco","startedAt":"2026-11-10T13:05:00Z","localStartDate":"2026-11-10",
+              "subType":"ROAD","distanceMeters":60250,"movingTimeSeconds":9000,"elapsedTimeSeconds":9600,"elevationGainMeters":900,
+              "averageSpeedMps":6.69,"bikeId":null}],"nextCursor":null}"""
+
+        const val EXPLORATION = """
+            {"algorithmVersion":"exploration-cells/1","processedActivities":150,"pendingActivities":0,
+             "h3":{"resolution":9,"cellCount":9876,"approxAreaKm2":1234.5},
+             "metricGrid":{"cellSizeMeters":1000,"cellCount":1234,"areaKm2":1234}}"""
+
+        const val LARGEST_SQUARE = """
+            {"algorithmVersion":"largest-square/1","cellSizeMeters":1000,"size":4,"sideKm":4,"bbox":[-99.25,19.25,-99.2,19.3]}"""
 
         const val TOKENS =
             """{"tokenType":"Bearer","accessToken":"a1","accessTokenExpiresIn":900,"refreshToken":"r1","refreshTokenExpiresIn":2592000}"""

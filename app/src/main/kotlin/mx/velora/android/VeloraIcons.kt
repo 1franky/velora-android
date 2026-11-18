@@ -31,6 +31,12 @@ object VeloraIcons {
 
     val Home = stroke("Inicio", "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z")
     val Activities = stroke("Actividades", "M3 12h4l3 8 4-16 3 8h4")
+    val Explorer = stroke(
+        "Explorador",
+        "M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z",
+        "M15 5.764v15",
+        "M9 3.236v15",
+    )
     val Performance = stroke("Rendimiento", "M4 20V10", "M10 20V4", "M16 20v-7", "M22 20H2")
     val TrendUp = stroke("Sube", "M22 7 13.5 15.5 8.5 10.5 2 17", "M16 7h6v6")
     val TrendDown = stroke("Baja", "M22 17 13.5 8.5 8.5 13.5 2 7", "M16 17h6v-6")
