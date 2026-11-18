@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import android.net.Uri
 import androidx.compose.ui.Modifier
@@ -42,9 +43,14 @@ import mx.velora.android.activities.ActivitiesViewModel
 import mx.velora.android.core.data.ActivitiesRepository
 import mx.velora.android.core.data.ActivityDetailRepository
 import mx.velora.android.core.data.DashboardRepository
+import mx.velora.android.core.data.ExplorerRepository
 import mx.velora.android.core.data.ImportsRepository
 import mx.velora.android.core.data.PerformanceRepository
 import mx.velora.android.core.data.Synchronizer
+import mx.velora.android.explorer.ExplorerMap
+import mx.velora.android.explorer.ExplorerScreen
+import mx.velora.android.explorer.ExplorerViewModel
+import mx.velora.android.explorer.heatmapTilesUrl
 import mx.velora.android.performance.PerformanceScreen
 import mx.velora.android.performance.PerformanceViewModel
 import mx.velora.android.sync.SyncSection
@@ -68,6 +74,8 @@ import mx.velora.android.settings.SettingsScreen
 
 @Serializable data object Activities
 
+@Serializable data object Explorer
+
 @Serializable data object Performance
 
 @Serializable data object Settings
@@ -82,6 +90,7 @@ import mx.velora.android.settings.SettingsScreen
 private enum class Section(val route: Any, @StringRes val label: Int, val icon: ImageVector) {
     HOME(Home, R.string.nav_home, VeloraIcons.Home),
     ACTIVITIES(Activities, R.string.nav_activities, VeloraIcons.Activities),
+    EXPLORER(Explorer, R.string.nav_explorer, VeloraIcons.Explorer),
     PERFORMANCE(Performance, R.string.nav_performance, VeloraIcons.Performance),
     SETTINGS(Settings, R.string.nav_settings, VeloraIcons.Settings),
 }
@@ -129,6 +138,14 @@ fun VeloraRoot(
                 openImport = shared.isNotEmpty(),
                 sync = { SyncSection(viewModel { SyncViewModel(synchronizer) }) },
                 performance = { onOpen -> PerformanceScreen(viewModel { PerformanceViewModel(performance) }, onOpen) },
+                explorer = { onImport ->
+                    val mapUrl = stringResource(R.string.map_url)
+                    val repository = remember(session) { ExplorerRepository(session) }
+                    val tilesUrl = heatmapTilesUrl(current.serverUrl)
+                    ExplorerScreen(viewModel { ExplorerViewModel(repository) }, onImport) { state, onViewport, modifier ->
+                        ExplorerMap(state, onViewport, session, mapUrl, tilesUrl, modifier)
+                    }
+                },
                 detail = { id, fromHome, onBack ->
                     val mapUrl = stringResource(R.string.map_url)
                     ActivityDetailScreen(
@@ -156,6 +173,7 @@ fun VeloraApp(
     openImport: Boolean = false,
     sync: @Composable () -> Unit = {},
     performance: @Composable (onOpenActivity: (String) -> Unit) -> Unit = {},
+    explorer: @Composable (onImport: () -> Unit) -> Unit = {},
 ) {
     val navController = rememberNavController()
     LaunchedEffect(openImport) {
@@ -206,6 +224,7 @@ fun VeloraApp(
                 val route = backStackEntry.toRoute<ActivityDetailRoute>()
                 detail(route.id, route.fromHome) { navController.popBackStack() }
             }
+            composable<Explorer> { explorer { navController.navigate(ImportRoute) } }
             composable<Performance> { performance { id -> navController.navigate(ActivityDetailRoute(id)) } }
             composable<Settings> { SettingsScreen(account.email, account.serverUrl, onLogout, sync) }
         }

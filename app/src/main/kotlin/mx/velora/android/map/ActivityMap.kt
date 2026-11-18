@@ -23,9 +23,11 @@ import mx.velora.android.R
 import mx.velora.android.api.models.ActivityTrack
 import mx.velora.android.core.network.VeloraApi
 import mx.velora.android.core.session.SessionManager
+import mx.velora.android.core.session.SessionState
 import mx.velora.android.detail.LngLat
 import mx.velora.android.detail.MAX_TRACK_ZOOM
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -47,17 +49,23 @@ object VeloraMap {
     fun start(context: Context, session: SessionManager, mapUrl: String) {
         if (started) return
         MapLibre.getInstance(context.applicationContext)
-        val auth = MapAuthentication(mapUrl.toHttpUrl(), token = { session.accessToken() }, renew = { session.renewAccessToken(it) })
+        val auth = MapAuthentication(
+            mapUrl.toHttpUrl(),
+            token = { session.accessToken() },
+            renew = { session.renewAccessToken(it) },
+            // Las teselas del mapa de calor salen de la API de la sesión (ADR-017).
+            apiOrigin = { (session.state.value as? SessionState.SignedIn)?.serverUrl?.toHttpUrlOrNull() },
+        )
         HttpRequestUtil.setOkHttpClient(OkHttpClient.Builder().addInterceptor(auth).authenticator(auth).build())
         started = true
     }
 }
 
 /** Colores del recorrido, los mismos de la web (`TRACK_COLORS`): el acento, con un borde que lo separa de las calles. */
-private data class TrackColors(val line: String, val casing: String)
+internal data class TrackColors(val line: String, val casing: String)
 
-private val LIGHT = TrackColors(line = "#c76a0e", casing = "#ffffff")
-private val DARK = TrackColors(line = "#f2a03d", casing = "#0d141c")
+internal val LIGHT = TrackColors(line = "#c76a0e", casing = "#ffffff")
+internal val DARK = TrackColors(line = "#f2a03d", casing = "#0d141c")
 
 /**
  * El recorrido sobre el mapa base de Velora. En el detalle es una vista previa encuadrada y sin gestos: dentro de una
@@ -98,39 +106,14 @@ private fun TrackMap(
     modifier: Modifier,
 ) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val colors = if (dark) DARK else LIGHT
     val styleUrl = "${mapUrl.trimEnd('/')}/mapa/estilo/${if (dark) "oscuro" else "claro"}.json"
     val geoJson = remember(track) { VeloraApi.json.encodeToString(ActivityTrack.serializer(), track) }
     val label = stringResource(R.string.map_of, title)
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
     val currentPosition by rememberUpdatedState(position)
 
-    val mapView = remember {
-        VeloraMap.start(context, session, mapUrl)
-        MapView(context).apply { onCreate(null) }
-    }
-    DisposableEffect(lifecycle, mapView) {
-        // Al agregarse, el observador recibe los eventos hasta el estado actual: un mapa abierto a pantalla completa
-        // arranca y se reanuda de inmediato.
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START -> mapView.onStart()
-                Lifecycle.Event.ON_RESUME -> mapView.onResume()
-                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
-                Lifecycle.Event.ON_STOP -> mapView.onStop()
-                else -> Unit
-            }
-        }
-        lifecycle.addObserver(observer)
-        onDispose {
-            lifecycle.removeObserver(observer)
-            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) mapView.onPause()
-            if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) mapView.onStop()
-            mapView.onDestroy()
-        }
-    }
+    val mapView = rememberMapView(session, mapUrl)
 
     AndroidView(
         factory = {
@@ -198,6 +181,39 @@ private fun TrackMap(
         },
         modifier = modifier.semantics { contentDescription = label },
     )
+}
+
+/** Un MapView que sigue el ciclo de vida de la pantalla y se destruye al salir de la composición. */
+@Composable
+internal fun rememberMapView(session: SessionManager, mapUrl: String): MapView {
+    val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val mapView = remember {
+        VeloraMap.start(context, session, mapUrl)
+        MapView(context).apply { onCreate(null) }
+    }
+    DisposableEffect(lifecycle, mapView) {
+        // Al agregarse, el observador recibe los eventos hasta el estado actual: un mapa abierto a pantalla completa
+        // arranca y se reanuda de inmediato.
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> mapView.onStart()
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                Lifecycle.Event.ON_STOP -> mapView.onStop()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) mapView.onPause()
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) mapView.onStop()
+            mapView.onDestroy()
+        }
+    }
+
+    return mapView
 }
 
 private const val SOURCE = "recorrido"
