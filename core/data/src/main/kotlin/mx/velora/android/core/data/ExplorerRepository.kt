@@ -1,6 +1,7 @@
 package mx.velora.android.core.data
 
 import mx.velora.android.api.models.ActivitySubType
+import mx.velora.android.api.models.Bike
 import mx.velora.android.api.models.ExplorationCells
 import mx.velora.android.api.models.ExplorationSummary
 import mx.velora.android.api.models.LargestSquare
@@ -20,10 +21,10 @@ sealed interface ExplorerFocus {
     /** Recuadro (oeste, sur, este, norte), ya recortado por la privacidad, de la rodada más reciente con GPS. */
     data class Bounds(val bbox: List<Double>) : ExplorerFocus
 
-    /** Hay rodadas, pero ninguna reciente con GPS (p. ej., todas en rodillo): la vista queda en México. */
+    /** Hay rodadas (que cumplen los filtros), pero ninguna reciente con GPS (p. ej., en rodillo): la vista queda en México. */
     data object NoGps : ExplorerFocus
 
-    /** Aún no hay rodadas. */
+    /** Ninguna rodada (que cumpla los filtros). */
     data object Empty : ExplorerFocus
 }
 
@@ -41,9 +42,18 @@ class ExplorerRepository(private val session: SessionManager) {
     suspend fun cells(grid: CellGrid, bbox: List<Double>): Remote<ExplorationCells> =
         remote(session) { listExplorationCells(bboxParam(bbox), grid.api) }
 
-    /** La vista empieza en la zona de la rodada más reciente con GPS, como en la web. */
-    suspend fun focus(): Remote<ExplorerFocus> {
-        val items = when (val page = remote(session) { listActivities(null, null, null, null, null, null, null, FOCUS_CANDIDATES) }) {
+    /** Las bicicletas para el filtro; null si no se pudieron cargar. */
+    suspend fun bikes(): List<Bike>? = loadBikes(session)
+
+    /**
+     * La vista empieza en la zona de la rodada más reciente con GPS que cumple [filters], como en la web. Las distancias
+     * no aplican al mapa de calor y se ignoran.
+     */
+    suspend fun focus(filters: ActivityFilters = ActivityFilters()): Remote<ExplorerFocus> {
+        val page = remote(session) {
+            listActivities(filters.from, filters.to, filters.bikeId, filters.subType, null, null, null, FOCUS_CANDIDATES)
+        }
+        val items = when (page) {
             is Remote.Ok -> page.value.items
             Remote.NotFound -> return Remote.NotFound
             is Remote.Failed -> return page
@@ -67,3 +77,11 @@ class ExplorerRepository(private val session: SessionManager) {
         fun bboxParam(bbox: List<Double>): String = bbox.joinToString(",") { String.format(java.util.Locale.ROOT, "%.5f", it) }
     }
 }
+
+/** Consulta de las teselas del mapa de calor (`from`, `to`, `subType`, `bikeId`), como `heatmapQuery` de la web. */
+fun heatmapQuery(filters: ActivityFilters): String = buildList {
+    filters.from?.let { add("from=$it") }
+    filters.to?.let { add("to=$it") }
+    filters.subType?.let { add("subType=${it.value}") }
+    filters.bikeId?.let { add("bikeId=$it") }
+}.joinToString("&")

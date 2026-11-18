@@ -10,9 +10,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import mx.velora.android.R
+import mx.velora.android.api.models.Bike
 import mx.velora.android.api.models.ExplorationCells
 import mx.velora.android.api.models.ExplorationSummary
 import mx.velora.android.api.models.LargestSquare
+import mx.velora.android.core.data.ActivityFilters
 import mx.velora.android.core.data.CellGrid
 import mx.velora.android.core.data.ExplorerFocus
 import mx.velora.android.core.data.ExplorerRepository
@@ -36,6 +38,8 @@ data class Viewport(val zoom: Double, val bbox: List<Double>)
 data class CameraTarget(val bbox: List<Double>, val maxZoom: Double, val id: Int)
 
 data class ExplorerState(
+    /** Filtros de las líneas del mapa (sin distancias: no aplican); las celdas y las cifras son de todo el historial. */
+    val filters: ActivityFilters = ActivityFilters(),
     val focus: Section<ExplorerFocus> = Section.Loading,
     /** No hay conexión: sin servidor no hay teselas ni cifras, la pantalla lo dice una vez. */
     val offline: Boolean = false,
@@ -63,6 +67,11 @@ class ExplorerViewModel(private val repository: ExplorerRepository) : ViewModel(
     private var jobs = emptyList<Job>()
     private var cellsJob: Job? = null
     private var viewport: Viewport? = null
+    private var focusJob: Job? = null
+    private val _bikes = MutableStateFlow<List<Bike>?>(null)
+
+    /** Las bicicletas para el filtro; null mientras no se carguen (o si falló). */
+    val bikes: StateFlow<List<Bike>?> = _bikes.asStateFlow()
 
     init {
         load()
@@ -70,27 +79,48 @@ class ExplorerViewModel(private val repository: ExplorerRepository) : ViewModel(
 
     fun load() {
         jobs.forEach { it.cancel() }
-        val layer = _state.value.layer
-        _state.update { ExplorerState(layer = layer, camera = it.camera) }
+        _state.update { ExplorerState(filters = it.filters, layer = it.layer, camera = it.camera) }
+        loadFocus()
         jobs = listOf(
-            viewModelScope.launch {
-                when (val focus = repository.focus()) {
-                    is Remote.Ok -> _state.update { state ->
-                        val bounds = focus.value as? ExplorerFocus.Bounds
-                        state.copy(
-                            focus = Section.Ready(focus.value),
-                            camera = bounds?.let { CameraTarget(it.bbox, FOCUS_MAX_ZOOM, (state.camera?.id ?: 0) + 1) } ?: state.camera,
-                        )
-                    }
-                    // Sin poder encuadrar, el mapa empieza en México.
-                    else -> _state.update {
-                        it.copy(focus = Section.Failed, offline = (focus as? Remote.Failed)?.reason == RefreshResult.OFFLINE)
-                    }
-                }
-            },
             viewModelScope.launch { repository.summary().let { r -> _state.update { it.copy(summary = section(r)) } } },
             viewModelScope.launch { repository.largestSquare().let { r -> _state.update { it.copy(square = section(r)) } } },
         )
+    }
+
+    /** Nuevos filtros: otras líneas y la vista va a la rodada más reciente que los cumple. Las celdas no cambian. */
+    fun apply(filters: ActivityFilters) {
+        val lines = filters.copy(minKm = null, maxKm = null)
+        if (lines == _state.value.filters) return
+        _state.update { it.copy(filters = lines, focus = Section.Loading) }
+        loadFocus()
+    }
+
+    fun loadBikes() {
+        if (_bikes.value != null) return
+        viewModelScope.launch { _bikes.value = repository.bikes() }
+    }
+
+    private fun loadFocus() {
+        focusJob?.cancel()
+        val filters = _state.value.filters
+        focusJob = viewModelScope.launch {
+            val focus = repository.focus(filters)
+            _state.update { state ->
+                if (state.filters != filters) return@update state
+                when (focus) {
+                    is Remote.Ok -> {
+                        val bounds = focus.value as? ExplorerFocus.Bounds
+                        state.copy(
+                            focus = Section.Ready(focus.value),
+                            offline = false,
+                            camera = bounds?.let { CameraTarget(it.bbox, FOCUS_MAX_ZOOM, (state.camera?.id ?: 0) + 1) } ?: state.camera,
+                        )
+                    }
+                    // Sin poder encuadrar, el mapa se queda donde está (al abrir, en México).
+                    else -> state.copy(focus = Section.Failed, offline = (focus as? Remote.Failed)?.reason == RefreshResult.OFFLINE)
+                }
+            }
+        }
     }
 
     fun select(layer: ExplorerLayer) {

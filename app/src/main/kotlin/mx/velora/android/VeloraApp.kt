@@ -141,9 +141,8 @@ fun VeloraRoot(
                 explorer = { onImport ->
                     val mapUrl = stringResource(R.string.map_url)
                     val repository = remember(session) { ExplorerRepository(session) }
-                    val tilesUrl = heatmapTilesUrl(current.serverUrl)
                     ExplorerScreen(viewModel { ExplorerViewModel(repository) }, onImport) { state, onViewport, modifier ->
-                        ExplorerMap(state, onViewport, session, mapUrl, tilesUrl, modifier)
+                        ExplorerMap(state, onViewport, session, mapUrl, heatmapTilesUrl(current.serverUrl, state.filters), modifier)
                     }
                 },
                 detail = { id, fromHome, onBack ->

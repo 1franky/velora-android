@@ -3,15 +3,14 @@ package mx.velora.android.explorer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import mx.velora.android.R
+import mx.velora.android.activities.FiltersSheet
+import mx.velora.android.activities.WideDragHandle
 import mx.velora.android.api.models.ExplorationSummary
 import mx.velora.android.api.models.LargestSquare
 import mx.velora.android.core.data.ExplorerFocus
@@ -63,21 +64,42 @@ fun ExplorerScreen(
     map: @Composable (state: ExplorerState, onViewport: (Viewport) -> Unit, modifier: Modifier) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val bikes by viewModel.bikes.collectAsStateWithLifecycle()
     var statsOpen by rememberSaveable { mutableStateOf(false) }
+    var filtersOpen by rememberSaveable { mutableStateOf(false) }
+    // Sin rodadas en absoluto (no por los filtros): se invita a importar.
+    val noRides = state.focus == Section.Ready(ExplorerFocus.Empty) && state.filters.isEmpty
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(stringResource(R.string.nav_explorer), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-            if (!state.offline && state.focus != Section.Ready(ExplorerFocus.Empty)) Layers(state.layer, viewModel::select)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.nav_explorer), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+                if (!state.offline && !noRides) {
+                    OutlinedButton(onClick = { filtersOpen = true; viewModel.loadBikes() }) {
+                        Text(
+                            if (state.filters.isEmpty) {
+                                stringResource(R.string.activities_filters)
+                            } else {
+                                pluralStringResource(R.plurals.activities_filters_active, state.filters.active, state.filters.active)
+                            },
+                        )
+                    }
+                }
+            }
+            if (!state.offline && !noRides) Layers(state.layer, viewModel::select)
         }
         when {
             state.offline -> Message(stringResource(R.string.explorer_unavailable)) {
                 Button(onClick = viewModel::load) { Text(stringResource(R.string.retry)) }
             }
-            state.focus == Section.Ready(ExplorerFocus.Empty) -> Column(
+            noRides -> Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -92,7 +114,7 @@ fun ExplorerScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (state.focus == Section.Ready(ExplorerFocus.NoGps)) Note(stringResource(R.string.explorer_no_gps))
+                    focusNote(state)?.let { Note(stringResource(it)) }
                     cellsNote(state)?.let { Note(stringResource(it)) }
                 }
                 if (state.focus == Section.Loading) {
@@ -105,12 +127,24 @@ fun ExplorerScreen(
         }
     }
 
+    if (filtersOpen) {
+        FiltersSheet(
+            current = state.filters,
+            bikes = bikes,
+            withDistance = false,
+            onApply = {
+                filtersOpen = false
+                viewModel.apply(it)
+            },
+            onDismiss = { filtersOpen = false },
+        )
+    }
+
     if (statsOpen) {
         ModalBottomSheet(
             onDismissRequest = { statsOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            // El asa de Material mide 32 dp de ancho y también se toca (expandir o cerrar): el área táctil, a 48 dp.
-            dragHandle = { Box(modifier = Modifier.widthIn(min = 48.dp), contentAlignment = Alignment.Center) { BottomSheetDefaults.DragHandle() } },
+            dragHandle = { WideDragHandle() },
         ) {
             Stats(
                 state,
@@ -123,10 +157,22 @@ fun ExplorerScreen(
     }
 }
 
+/** Por qué el mapa no encuadra una rodada: con filtros, ninguna los cumple; sin ellos, no hay GPS. */
+private fun focusNote(state: ExplorerState): Int? {
+    val focus = (state.focus as? Section.Ready)?.value ?: return null
+    return when {
+        focus is ExplorerFocus.Bounds -> null
+        !state.filters.isEmpty -> R.string.explorer_no_matches
+        focus == ExplorerFocus.NoGps -> R.string.explorer_no_gps
+        else -> null
+    }
+}
+
 private fun cellsNote(state: ExplorerState): Int? = when {
     state.layer == ExplorerLayer.TRACKS -> null
     else -> when (state.note) {
-        CellsNote.NONE -> null
+        // Con filtros, se aclara que las celdas no los siguen (como la web).
+        CellsNote.NONE -> if (state.filters.isEmpty) null else R.string.explorer_cells_all_time
         CellsNote.ZOOM_IN -> R.string.explorer_cells_zoom_in
         CellsNote.TRUNCATED -> R.string.explorer_cells_truncated
         CellsNote.UNAVAILABLE -> R.string.explorer_cells_unavailable

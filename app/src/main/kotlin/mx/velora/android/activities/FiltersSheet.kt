@@ -1,6 +1,7 @@
 package mx.velora.android.activities
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -8,9 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -48,17 +51,30 @@ import mx.velora.android.core.data.ActivityFilters
 import mx.velora.android.home.label
 import mx.velora.android.ui.Formats
 
-/** Borrador de filtros: se aplica solo con "Aplicar filtros". Mismos campos que la web. */
+/**
+ * Borrador de filtros: se aplica solo con "Aplicar filtros". Mismos campos que la web; sin [withDistance] (el
+ * explorador: las distancias no aplican al mapa de calor), sin los de kilómetros.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun FiltersSheet(current: ActivityFilters, bikes: List<Bike>?, onApply: (ActivityFilters) -> Unit, onDismiss: () -> Unit) {
+fun FiltersSheet(
+    current: ActivityFilters,
+    bikes: List<Bike>?,
+    onApply: (ActivityFilters) -> Unit,
+    onDismiss: () -> Unit,
+    withDistance: Boolean = true,
+) {
     var draft by remember { mutableStateOf(current) }
     var minKm by remember { mutableStateOf(current.minKm?.let(::plain).orEmpty()) }
     var maxKm by remember { mutableStateOf(current.maxKm?.let(::plain).orEmpty()) }
     var invalid by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<DateField?>(null) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = { WideDragHandle() },
+    ) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
@@ -131,22 +147,24 @@ fun FiltersSheet(current: ActivityFilters, bikes: List<Bike>?, onApply: (Activit
                 }
             }
 
-            OutlinedTextField(
-                value = minKm,
-                onValueChange = { minKm = it },
-                label = { Text(stringResource(R.string.activities_filter_min_km)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = maxKm,
-                onValueChange = { maxKm = it },
-                label = { Text(stringResource(R.string.activities_filter_max_km)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (withDistance) {
+                OutlinedTextField(
+                    value = minKm,
+                    onValueChange = { minKm = it },
+                    label = { Text(stringResource(R.string.activities_filter_min_km)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = maxKm,
+                    onValueChange = { maxKm = it },
+                    label = { Text(stringResource(R.string.activities_filter_max_km)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             if (invalid) {
                 Text(
@@ -222,3 +240,10 @@ internal fun validated(draft: ActivityFilters, minKm: String, maxKm: String): Ac
 }
 
 private fun plain(value: Double): String = if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+
+/** El asa de Material mide 32 dp de ancho y también se toca (expandir o cerrar): el área táctil, a 48 dp. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun WideDragHandle() {
+    Box(modifier = Modifier.widthIn(min = 48.dp), contentAlignment = Alignment.Center) { BottomSheetDefaults.DragHandle() }
+}

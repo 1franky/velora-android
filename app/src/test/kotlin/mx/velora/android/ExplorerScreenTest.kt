@@ -76,7 +76,10 @@ class ExplorerScreenTest {
         if (offline) throw IOException("sin red")
         queries += path + "?" + request.url.encodedQuery
         val body = when {
+            // Con filtro de tipo, ninguna rodada lo cumple.
+            path == "/api/v1/activities" && request.url.parameters["subType"] != null -> """{"items":[],"nextCursor":null}"""
             path == "/api/v1/activities" -> """{"items":$rides,"nextCursor":null}"""
+            path == "/api/v1/bikes" -> """{"items":[]}"""
             path == "/api/v1/activities/$ROAD_ID/track" -> TRACK
             path == "/api/v1/geo/exploration/summary" -> SUMMARY
             path == "/api/v1/geo/exploration/largest-square" -> SQUARE
@@ -224,8 +227,44 @@ class ExplorerScreenTest {
     }
 
     @Test
+    fun filtersChangeTheLinesButNotTheCells() {
+        start()
+        waitForMap { it.camera != null }
+
+        compose.onNodeWithText("Filtros").performClick()
+        waitForText("Carretera")
+        // Las distancias no aplican al mapa de calor.
+        compose.onNodeWithText("Distancia mínima (km)").assertDoesNotExist()
+        compose.onNodeWithText("Carretera").performClick()
+        compose.onNodeWithText("Aplicar filtros").performClick()
+
+        waitForMap { it.filters.subType == mx.velora.android.api.models.ActivitySubType.ROAD }
+        compose.waitUntil(5_000) { queries.any { it.startsWith("/api/v1/activities?subType=ROAD") } }
+        // Ninguna la cumple: se dice, sin invitar a importar (sí hay rodadas).
+        waitForText("Ninguna rodada con GPS coincide con estos filtros.")
+        compose.onNodeWithText("Importar actividades").assertDoesNotExist()
+        compose.onNodeWithText("Filtros (1 activo)").assertExists()
+
+        compose.onNodeWithText("Cuadros").performClick()
+        reportViewport!!(Viewport(12.0, listOf(-99.25, 19.25, -99.15, 19.35)))
+        waitForText("Las celdas incluyen todas tus rodadas; los filtros solo cambian las líneas.")
+        assertTrue(queries.last { it.startsWith("/api/v1/geo/exploration/cells") }.contains("grid=MX1KM"))
+    }
+
+    @Test
     fun mapHelpers() {
         assertEquals("http://servidor/api/v1/geo/heatmap/{z}/{x}/{y}", heatmapTilesUrl("http://servidor/"))
+        val filters = mx.velora.android.core.data.ActivityFilters(
+            from = java.time.LocalDate.of(2026, 1, 1),
+            to = java.time.LocalDate.of(2026, 6, 30),
+            subType = mx.velora.android.api.models.ActivitySubType.GRAVEL,
+            bikeId = java.util.UUID.fromString("b1a1c0de-0000-4000-8000-000000000001"),
+            minKm = 20.0,
+        )
+        assertEquals(
+            "http://servidor/api/v1/geo/heatmap/{z}/{x}/{y}?from=2026-01-01&to=2026-06-30&subType=GRAVEL&bikeId=b1a1c0de-0000-4000-8000-000000000001",
+            heatmapTilesUrl("http://servidor", filters),
+        )
         assertEquals(listOf(-180.0, -90.0, 180.0, 90.0), clampBbox(listOf(-200.0, -95.0, 190.0, 91.0)))
         assertTrue(squareGeoJson(null).contains("\"features\":[]"))
         assertTrue(squareGeoJson(listOf(-99.0, 19.0, -98.0, 20.0)).contains("[[[-99.0,19.0],[-98.0,19.0],[-98.0,20.0],[-99.0,20.0],[-99.0,19.0]]]"))
